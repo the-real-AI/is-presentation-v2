@@ -1,0 +1,67 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[dev]
+  port = 8888
+
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["netlify/functions/**"]
+
+# ─── Auth routes ─────────────────────────────────────────────────────────────
+[[redirects]]
+  from    = "/api/auth/register"
+  to      = "/.netlify/functions/auth-register"
+  status  = 200
+
+[[redirects]]
+  from    = "/api/auth/login"
+  to      = "/.netlify/functions/auth-login"
+  status  = 200
+
+[[redirects]]
+  from    = "/api/auth/me"
+  to      = "/.netlify/functions/auth-me"
+  status  = 200
+
+[[redirects]]
+  from    = "/api/keys/generate"
+  to      = "/.netlify/functions/keys-generate"
+  status  = 200
+
+# ─── Data routes ─────────────────────────────────────────────────────────────
+[[redirects]]
+  from    = "/api/v1/systems/:id"
+  to      = "/.netlify/functions/systems-delete"
+  status  = 200
+
+[[redirects]]
+  from    = "/api/v1/systems"
+  to      = "/.netlify/functions/systems"
+  status  = 200
+
+[[redirects]]
+  from    = "/api/v1/stats"
+  to      = "/.netlify/functions/stats"
+  status  = 200
+
+[[redirects]]
+  from    = "/api/v1/slides"
+  to      = "/.netlify/functions/slides"
+  status  = 200
+
+# ─── SPA catch-all (must be last) ────────────────────────────────────────────
+[[redirects]]
+  from    = "/*"
+  to      = "/index.html"
+  status  = 200
+
+# ─── Security headers ─────────────────────────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options           = "SAMEORIGIN"
+    X-Content-Type-Options    = "nosniff"
+    Referrer-Policy           = "strict-origin-when-cross-origin"
+    Permissions-Policy        = "camera=(), microphone=(), geolocation=()"

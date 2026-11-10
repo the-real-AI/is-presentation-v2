@@ -1,67 +1,57 @@
-# Мультимедийная интерактивная веб-презентация & Single Page Application (v2.0)
-## Тема: «Проектирование информационных систем»
+# 🚀 Архитектурный реестр ИС & Мультимедийная SPA Презентация (v2.0)
+## Связка: Netlify + Google Cloud Firebase + JWT (RFC 7519) + X-API-Key
 
-Современное мультиплатформенное веб-приложение (SPA) с собственной реляционной базой данных SQLite, защищённым REST API с авторизацией по **X-API-Key** и полноценной **JWT** аутентификацией.
+Современное мультиплатформенное одностраничное веб-приложение (**Single Page Application**), развёртываемое на **Netlify** с облачной NoSQL базой данных **Google Cloud Firestore**, аутентификацией **Google Firebase Auth (JWT)** и защищённым шлюзом **Netlify Functions** с обязательной верификацией заголовка **`X-API-Key`**.
 
 ---
 
 ### 🌟 Ключевые возможности и архитектура (v2.0)
 
 #### 1. ⚡ Single Page Application (SPA)
-- Вся навигация между разделами работает **без перезагрузки страницы**:
-  - 🖥️ **Слайды** (`#presentation`) — полный комплекс из 26 слайдов с интерактивными схемами, таймером, звуковыми эффектами (Web Audio API), лазерной указкой/маркером и поддержкой интерактивных досок (Smartboard).
-  - 🗄️ **База данных ИС** (`#database`) — панель реестра архитектурных систем из SQLite БД, поиск в реальном времени, фильтрация по стилям (Microservices, Monolith, EDA, Cloud Native), форма добавления новых записей и расчёт метрик SLA.
-  - 🔌 **API & X-API-Key Console** (`#api-console`) — встроенный Swagger-подобный интерактивный тестер API: селектор методов (GET, POST, DELETE), эндпоинтов, поле для ввода `X-API-Key`, инспектор кодов ответа (200 OK, 401 Unauthorized), замер задержки (мс), подсветка синтаксиса JSON и генератор команд `cURL`.
-  - 👤 **JWT Авторизация и Профиль** (`#profile`) — формы входа и регистрации, визуализатор токена (Header, Payload, Signature), генерация и копирование персонального `X-API-Key`.
+Вся навигация между разделами работает **без перезагрузки страницы**:
+- 🖥️ **Слайды** (`#presentation`) — полный комплекс из 26 слайдов с интерактивными архитектурными схемами, таймером доклада, звуковыми эффектами (Web Audio API), лазерной указкой/маркером и поддержкой интерактивных досок (Smartboard).
+- 🗄️ **База данных ИС** (`#database`) — реестр архитектурных систем из **Google Cloud Firestore**, мгновенный поиск, фильтрация по стилям (Microservices, Monolith, EDA, Cloud Native, Lambda), добавление новых систем и расчёт метрик SLA.
+- 🔌 **API & X-API-Key Console** (`#api-console`) — встроенный интерактивный Swagger-тестер API:
+  - Селектор HTTP методов (`GET`, `POST`, `DELETE`);
+  - Выбор эндпоинтов (`/api/v1/systems`, `/api/v1/stats`, `/api/v1/slides`);
+  - Поле для ввода заголовка `X-API-Key` (с кнопками «Подставить мой ключ» и «Очистить ключ» для проверки безопасности);
+  - Инспектор кодов ответа с цветовой дифференциацией:
+    - 🟢 **HTTP 200 OK** (при наличии действующего `X-API-Key`);
+    - 🔴 **HTTP 401 Unauthorized** (при отсутствии ключа);
+  - Замер времени отклика сервера (мс);
+  - Форматированный вывод JSON и автоматический генератор команд **cURL**.
+- 👤 **JWT Авторизация и Профиль** (`#profile`) — формы входа и регистрации Google Firebase Auth, визуализатор токена (Header, Payload, Signature), генерация и копирование персонального `X-API-Key`.
 
-#### 2. 🔐 JWT Аутентификация (JSON Web Token — RFC 7519)
-- Подпись токенов по алгоритму **HMAC-SHA256**.
-- Защита сессий и передача токена в заголовке `Authorization: Bearer <token>`.
-- Инспектор токена прямо в UI: цветовое разделение на Header, Payload и Signature, расшифровка claims (`sub`, `role`, `email`, `exp`).
+#### 2. 🔐 JWT Аутентификация (RFC 7519) & Google Firebase
+- Подлинные JWT токены, выпускаемые Google Firebase Identity Toolkit.
+- Инспектор токена прямо в интерфейсе: разделение на Header (алгоритм RS256/HS256), Payload (claims `sub`, `iss: https://securetoken.google.com/presentation-3ecc0`, `email`, `role`, `exp`) и Signature.
 - Быстрый демо-вход в 1 клик:
-  - 👑 **Administrator**: `admin@system.local` / `admin123`
-  - 🛠️ **Solution Architect**: `architect@system.local` / `pass123`
-  - Возможность зарегистрировать любого нового пользователя.
+  - 👑 **Administrator**: `admin@system.local` / `admin123` (мастер-ключ `xak_live_master_9948201`)
+  - 🛠️ **Solution Architect**: `architect@system.local` / `pass123` (ключ `xak_live_arch_7731902`)
+  - Регистрация любого нового пользователя с сохранением в Firebase Auth.
 
-#### 3. 📱 Мультиплатформенная адаптация (Responsive Design)
-- **Смартфоны (320px – 576px)**: мобильное бургер-меню (Mobile Drawer), touch-target кнопки (>=44px), поддержка горизонтальных свайпов, компактная адаптивная сетка, скроллируемые таблицы.
-- **Планшеты (768px – 1024px)**: двухколоночный гибкий макет для консоли API, сенсорный отклик.
-- **Десктопы и 4K (1200px+)**: стеклянный неоморфный дизайн (Glassmorphism), анимации Canvas, горячие клавиши.
-- **Интерактивные сенсорные доски (Smartboards)**: плавающие боковые сенсорные кнопки переключения слайдов, режим виртуальной лазерной указки/маркера.
-- **Печать и экспорт (`Ctrl + P`)**: режим чистой печати в PDF.
+#### 3. 📱 Мультиплатформенная адаптация (Universal Responsive)
+- **Смартфоны (320px – 576px)**: мобильное всплывающее меню (Mobile Drawer), touch-target кнопки (>=44px), поддержка горизонтальных свайпов, компактные карточки вместо ломающихся таблиц.
+- **Планшеты (768px – 1024px)**: гибкий двухколоночный макет для API-консоли, сенсорный отклик.
+- **Десктопы и 4K (1200px+)**: стеклянный неоморфный дизайн (Glassmorphism), анимации на Canvas, горячие клавиши управления презентацией (`Space`, `F`, `Home`, `End`).
+- **Интерактивные сенсорные доски (Smartboards)**: плавающие боковые сенсорные кнопки переключения слайдов, режим виртуальной лазерной указки/рисования стилусом на canvas.
+- **Печать и PDF (`Ctrl + P`)**: режим чистой печати документации без панелей навигации.
 
-#### 4. 🗄️ База данных SQLite и API с доступом по `X-API-Key`
-- Бэкенд построен на **Node.js (node:sqlite Native)** — без необходимости установки внешних C++ библиотек.
-- Защита доступа к эндпоинтам базы данных:
+#### 4. 🗄️ База данных Google Firebase Firestore и доступ по `X-API-Key`
+- Все запросы к данным защищены serverless-шлюзом **Netlify Functions**:
   - При отсутствии или некорректном заголовке `X-API-Key` возвращается **HTTP 401 Unauthorized**:
     ```json
     {
       "success": false,
-      "error": "Unauthorized: Invalid or missing X-API-Key",
-      "message": "Доступ запрещён! Требуется действующий заголовок X-API-Key."
+      "error": "Unauthorized: Missing X-API-Key header",
+      "message": "Доступ к API закрыт! Требуется заголовок X-API-Key."
     }
     ```
-  - При наличии валидного ключа возвращаются реальные данные из SQLite:
+  - При наличии валидного ключа возвращаются реальные данные из Firestore:
     ```bash
-    curl -H "X-API-Key: xak_live_master_9948201" http://localhost:3000/api/v1/systems
+    curl -H "X-API-Key: xak_live_master_9948201" https://your-site.netlify.app/api/v1/systems
     ```
-- **Dual-Mode Fallback**: при открытии статически в браузере (Netlify, GitHub Pages, `file://`) приложение автоматически включает встроенный клиентский движок БД (IndexedDB) с точной эмуляцией проверки `X-API-Key` и JWT!
-
----
-
-### 🚀 Запуск проекта
-
-#### Вариант 1: С полноценным Node.js + SQLite сервером (Рекомендуется)
-```bash
-# Запуск сервера на встроенном node:sqlite (Node 22+)
-npm start
-# или
-node server.js
-```
-Откройте в браузере: [http://localhost:3000](http://localhost:3000)
-
-#### Вариант 2: Статический запуск (Без сервера)
-Просто откройте файл `index.html` в любом современном браузере. Сайт автоматически активирует клиентский оффлайн-движок с эмуляцией API и JWT.
+- **Dual-Mode Fallback**: при оффлайн-запуске приложение автоматически включает локальный кэш с эмуляцией проверки `X-API-Key` и JWT!
 
 ---
 
@@ -69,25 +59,60 @@ node server.js
 
 | Метод | Эндпоинт | Требуемая авторизация | Описание |
 | :--- | :--- | :---: | :--- |
-| `POST` | `/api/auth/register` | Открытый | Регистрация пользователя, выпуск JWT и API-ключа |
-| `POST` | `/api/auth/login` | Открытый | Вход, выдача JWT токена и X-API-Key |
-| `GET` | `/api/auth/me` | `Bearer <JWT>` | Получение данных текущего пользователя из БД |
-| `POST` | `/api/keys/generate` | `Bearer <JWT>` | Генерация нового X-API-Key |
-| `GET` | `/api/v1/systems` | `X-API-Key` | Список проектируемых систем из SQLite |
-| `POST` | `/api/v1/systems` | `X-API-Key` | Создание новой системы в БД |
-| `DELETE`| `/api/v1/systems/:id`| `X-API-Key` | Удаление системы по идентификатору |
-| `GET` | `/api/v1/slides` | `X-API-Key` | Получение метаданных 26 слайдов |
+| `POST` | `/api/auth/register` | Открытый | Регистрация пользователя в Firebase, выпуск JWT и X-API-Key |
+| `POST` | `/api/auth/login` | Открытый | Вход, выдача Firebase JWT токена и X-API-Key |
+| `GET` | `/api/auth/me` | `Bearer <JWT>` | Получение данных текущего пользователя |
+| `POST` | `/api/keys/generate` | `Bearer <JWT>` | Генерация нового персонального X-API-Key |
+| `GET` | `/api/v1/systems` | `X-API-Key` | Список проектируемых систем из Google Cloud Firestore |
+| `POST` | `/api/v1/systems` | `X-API-Key` | Добавление новой системы в Firestore |
+| `DELETE`| `/api/v1/systems/:id`| `X-API-Key` | Удаление системы по ID из Firestore |
+| `GET` | `/api/v1/slides` | `X-API-Key` | Метаданные 26 слайдов |
 | `GET` | `/api/v1/stats` | `X-API-Key` | Аудит запросов и метрики базы данных |
+
+---
+
+### 🚀 Развёртывание на Netlify (Инструкция)
+
+#### Шаг 1: Загрузка на GitHub
+```bash
+git add .
+git commit -m "feat: integrate Google Firebase and Netlify functions with X-API-Key guard"
+git push origin main
+```
+
+#### Шаг 2: Подключение репозитория к Netlify
+1. Перейдите на [netlify.com](https://www.netlify.com/) и войдите через GitHub.
+2. Нажмите **Add new site** → **Import an existing project** → выберите **GitHub**.
+3. Выберите репозиторий `is-presentation-v2`.
+4. Параметры сборки подставятся автоматически из `netlify.toml`:
+   - **Publish directory**: `.` (корень)
+   - **Functions directory**: `netlify/functions`
+5. В разделе **Site configuration** → **Environment variables** добавьте переменные из файла `.env`:
+   - `FIREBASE_PROJECT_ID`: `presentation-3ecc0`
+   - `FIREBASE_WEB_API_KEY`: `AIzaSyAHxcTYxlb0Qllin9VbFHJM0EqE_XEAyMQ`
+   - `JWT_SECRET`: `is-presentation-super-secret-jwt-key-2026`
+6. Нажмите **Deploy site**. Ваш проект будет опубликован за несколько секунд!
 
 ---
 
 ### 📁 Структура файлов проекта
 ```text
 is-presentation-v2/
-├── index.html       # Single Page Application: 26 слайдов, реестр БД, API-консоль, JWT-профиль
-├── style.css        # Адаптивные стили (Mobile Drawer, Glassmorphism, сетки, таблицы)
-├── script.js        # Движок презентации, SpaRouter, AuthModule (JWT), DatabaseModule, ApiConsoleModule
-├── server.js        # Node.js backend: SQLite БД (node:sqlite), JWT HMAC-SHA256, проверка X-API-Key
-├── package.json     # Конфигурация и скрипты запуска
-└── README.md        # Документация проекта
+├── index.html               # Единый SPA: 26 слайдов, реестр Firestore, API-консоль, JWT-профиль
+├── style.css                # Мультиплатформенные стили (Smartboard, Mobile Drawer, Glassmorphism)
+├── script.js                # Клиентский движок: SpaRouter, Firebase SDK, JWT-инспектор, API Console
+├── presentation.html        # Резервная копия страницы презентации
+├── netlify.toml             # Маршрутизация, редиректы и настройка Netlify Functions
+├── .env                     # Конфигурация Firebase проекта пользователя
+├── netlify/
+│   └── functions/
+│       ├── common.js        # Валидация X-API-Key и конвертер Firestore документов
+│       ├── systems.js       # GET и POST систем с защитой по X-API-Key
+│       ├── systems-delete.js# DELETE системы по ID из Firestore
+│       ├── auth-login.js    # Вход через Google Firebase Identity Toolkit (JWT)
+│       ├── auth-register.js # Регистрация нового пользователя
+│       ├── keys-generate.js # Выпуск персональных X-API-Key
+│       ├── stats.js         # Метрики архитектурного реестра
+│       └── slides.js        # Метаданные слайдов презентации
+└── README.md                # Полная документация
 ```

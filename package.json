@@ -1,20 +1,17 @@
 {
   "name": "is-presentation-spa",
   "version": "2.0.0",
-  "description": "Мультимедийная интерактивная веб-презентация и Single Page Application: JWT авторизация, адаптивный мультиплатформенный UI, SQLite база данных и API с доступом по X-API-Key",
-  "main": "server.js",
+  "description": "SPA: JWT Auth, Firebase Firestore, Netlify Functions, X-API-Key",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "netlify dev",
+    "build": "echo No build step required"
   },
-  "keywords": [
-    "single-page-application",
-    "jwt-authentication",
-    "responsive-design",
-    "sqlite-api",
-    "x-api-key",
-    "system-design"
-  ],
-  "author": "Antigravity AI Pair Programming",
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "IS-Presentation Team",
   "license": "MIT"
 }
