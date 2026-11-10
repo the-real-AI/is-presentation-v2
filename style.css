@@ -486,6 +486,7 @@ body {
 .text-cyan { color: var(--accent-cyan); }
 .text-green { color: var(--accent-green); }
 .text-purple { color: var(--accent-purple); }
+.text-amber { color: var(--accent-amber); }
 .text-accent { color: var(--accent-cyan); }
 
 /* ==========================================================================

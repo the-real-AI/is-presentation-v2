@@ -1,134 +1,133 @@
 /**
  * ============================================================================
  * КУРСОВОЙ / УЧЕБНЫЙ ПРОЕКТ: ОДНОСТРАНИЧНОЕ ВЕБ-ПРИЛОЖЕНИЕ (SPA)
- * СВЯЗКА С БАЗОЙ ДАННЫХ ЧЕРЕЗ REST API С АВТОРИЗАЦИЕЙ X-API-KEY
+ * СВЯЗКА NETLIFY ФРОНТЕНДА С GOOGLE FIREBASE FIRESTORE ЧЕРЕЗ X-API-KEY
  * ============================================================================
  */
 
 // ============================================================================
-// 1. КОНФИГУРАЦИЯ API И КЛЮЧА ДОСТУПА
-// Измените эти константы на адрес вашего сервера и персональный ключ:
+// 1. КОНФИГУРАЦИЯ GOOGLE FIREBASE & X-API-KEY
+// Укажите Project ID и Web API Key из настроек вашего проекта в Firebase Console
 // ============================================================================
-const DEFAULT_API_URL = 'http://localhost:3000/api/v1/systems';
-const DEFAULT_API_KEY = 'xak_live_master_9948201'; // Замените на ваш 'YOUR_API_KEY_HERE'
+const DEFAULT_FIREBASE_PROJECT_ID = 'is-presentation-v2';
+const DEFAULT_FIREBASE_API_KEY = 'YOUR_FIREBASE_API_KEY_HERE'; // Замените на Web API Key из Firebase
+const DEFAULT_FIREBASE_COLLECTION = 'systems';
 
-// Поддержка сохранения переопределений из модального окна настроек (localStorage)
-let API_URL = localStorage.getItem('is_project_api_url') || DEFAULT_API_URL;
-let API_KEY = localStorage.getItem('is_project_api_key') || DEFAULT_API_KEY;
+// Чтение сохранённых параметров из localStorage (чтобы можно было менять прямо из UI)
+let FIREBASE_PROJECT_ID = localStorage.getItem('fb_project_id') || DEFAULT_FIREBASE_PROJECT_ID;
+let FIREBASE_API_KEY = localStorage.getItem('fb_api_key') || DEFAULT_FIREBASE_API_KEY;
+let FIREBASE_COLLECTION = localStorage.getItem('fb_collection') || DEFAULT_FIREBASE_COLLECTION;
+
+// Вычисляемый базовый URL Google Firestore REST API
+function getFirestoreUrl() {
+  return `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/${FIREBASE_COLLECTION}`;
+}
 
 // ============================================================================
-// 2. ДЕМОНСТРАЦИОННЫЙ НАБОР ДАННЫХ (OFFLINE MOCK ДЛЯ СТАТИЧЕСКОГО NETLIFY)
-// Используется для мгновенной демонстрации, если внешний бэкенд не запущен
+// 2. ЭТАЛОННЫЕ ДАННЫЕ ДЛЯ FIREBASE (И OFFLINE ДЕМО-РЕЖИМА)
 // ============================================================================
-const MOCK_SYSTEMS_DB = [
+const INITIAL_SYSTEMS = [
   {
-    id: "sys_01",
     code: "IS-CORE-BILLING",
     title: "Ядро биллинговой системы",
     architecture_type: "Microservices",
     sla_level: "99.99%",
     status: "Active",
-    database_tech: "PostgreSQL + Redis",
-    description: "Процессинг транзакций в реальном времени, event-driven шина на Kafka, распределенные блокировки."
+    database_tech: "Google Cloud Firestore + Redis",
+    description: "Обработка финансовых транзакций в реальном времени, event-driven шина сообщений, распределенный учет."
   },
   {
-    id: "sys_02",
     code: "IS-ECOMMERCE-GW",
     title: "API Gateway E-Commerce",
     architecture_type: "API Gateway",
     sla_level: "99.95%",
     status: "Active",
-    database_tech: "Redis Cluster",
-    description: "Входной шлюз для клиентского трафика: rate-limiting, JWT валидация и SSL терминирование."
+    database_tech: "Firebase Realtime DB",
+    description: "Входной шлюз для клиентского трафика: rate limiting, верификация JWT токенов и аудит безопасности."
   },
   {
-    id: "sys_03",
     code: "IS-INVENTORY-SRV",
     title: "Управление складскими остатками",
     architecture_type: "Modular Monolith",
     sla_level: "99.9%",
     status: "Active",
-    database_tech: "PostgreSQL",
-    description: "Учёт партий товаров, синхронизация остатков между складами с использованием CQRS паттерна."
+    database_tech: "PostgreSQL (Cloud SQL)",
+    description: "Инвентаризация и распределенный учет партий продукции на складах с использованием CQRS паттерна."
   },
   {
-    id: "sys_04",
     code: "IS-ANALYTICS-DWH",
     title: "Корпоративное хранилище данных",
     architecture_type: "Lambda",
     sla_level: "99.5%",
     status: "Active",
-    database_tech: "ClickHouse + MinIO",
-    description: "Аналитическое хранилище больших объёмов данных, витрины отчётности и ETL-пайплайны."
+    database_tech: "Google BigQuery + Firestore",
+    description: "Хранилище аналитической отчётности, витрины данных, ETL-пайплайны и мониторинг метрик."
   },
   {
-    id: "sys_05",
     code: "IS-CRM-CUSTOMER",
     title: "Управление отношениями с клиентами",
     architecture_type: "Microservices",
     sla_level: "99.9%",
     status: "Draft",
-    database_tech: "MongoDB + Elastic",
-    description: "Омниканальная платформа поддержки клиентов, единый профиль клиента 360 и полнотекстовый поиск."
+    database_tech: "Cloud Firestore NoSQL",
+    description: "Омниканальная платформа взаимодействия с клиентами, единый профиль клиента 360."
   },
   {
-    id: "sys_06",
     code: "IS-NOTIFICATION-BUS",
     title: "Шлюз рассылки уведомлений",
     architecture_type: "Event-Driven",
     sla_level: "99.95%",
     status: "Active",
-    database_tech: "RabbitMQ + Redis",
-    description: "Асинхронная доставка push-уведомлений, SMS и электронных писем по шаблонам."
+    database_tech: "Google Pub/Sub + Redis",
+    description: "Асинхронная доставка push-уведомлений, SMS и email по шаблонам событий."
   }
 ];
 
 // ============================================================================
-// 3. ГЛОБАЛЬНОЕ СОСТОЯНИЕ ПРИЛОЖЕНИЯ
+// 3. СОСТОЯНИЕ ПРИЛОЖЕНИЯ (APP STATE)
 // ============================================================================
 const AppState = {
-  rawItems: [],       // Сырые данные из БД
-  filteredItems: [],   // Отфильтрованные данные
-  viewMode: 'grid',    // 'grid' или 'table'
+  rawItems: [],
+  filteredItems: [],
+  viewMode: 'grid', // 'grid' | 'table'
   isLoading: false,
-  lastError: null,
-  isMockData: false
+  isMock: false
 };
 
 // ============================================================================
-// 4. DOM ЭЛЕМЕНТЫ
+// 4. ССЫЛКИ НА ЭЛЕМЕНТЫ DOM
 // ============================================================================
 const DOM = {
-  // Состояния
+  // Экраны состояний
   stateLoading: document.getElementById('state-loading'),
   stateError: document.getElementById('state-error'),
   stateContent: document.getElementById('state-content'),
-  
-  // Контейнеры вывода
-  cardsView: document.getElementById('cards-view'),
-  tableView: document.getElementById('table-view'),
-  tableBody: document.getElementById('table-body'),
-  emptyResults: document.getElementById('empty-results'),
-  statsContainer: document.getElementById('stats-container'),
-  
-  // Элементы ошибки
+
+  // Ошибка
   errorTitle: document.getElementById('error-title'),
   errorDesc: document.getElementById('error-desc'),
   errorDetails: document.getElementById('error-details'),
   btnErrorRetry: document.getElementById('btn-error-retry'),
   btnUseMock: document.getElementById('btn-use-mock'),
   btnEditKeyFromError: document.getElementById('btn-edit-key-from-error'),
-  
-  // Индикатор статуса
-  statusIndicator: document.getElementById('api-status-indicator'),
-  statusText: document.getElementById('status-text'),
-  
-  // Статистика
+
+  // Вывод данных
+  cardsView: document.getElementById('cards-view'),
+  tableView: document.getElementById('table-view'),
+  tableBody: document.getElementById('table-body'),
+  emptyResults: document.getElementById('empty-results'),
+  statsContainer: document.getElementById('stats-container'),
+
+  // Метрики
   statTotal: document.getElementById('stat-total'),
   statMicro: document.getElementById('stat-micro'),
   statSla: document.getElementById('stat-sla'),
-  
-  // Фильтры и поиск
+
+  // Статус бейдж
+  statusIndicator: document.getElementById('api-status-indicator'),
+  statusText: document.getElementById('status-text'),
+
+  // Фильтры
   searchInput: document.getElementById('search-input'),
   btnClearSearch: document.getElementById('btn-clear-search'),
   filterArchitecture: document.getElementById('filter-architecture'),
@@ -136,17 +135,19 @@ const DOM = {
   btnResetFilters: document.getElementById('btn-reset-filters'),
   btnViewGrid: document.getElementById('btn-view-grid'),
   btnViewTable: document.getElementById('btn-view-table'),
-  
-  // Модальные окна
+
+  // Модалка настроек Firebase
   modalSettings: document.getElementById('modal-settings'),
   btnOpenSettings: document.getElementById('btn-open-settings'),
   btnCloseSettings: document.getElementById('btn-close-settings'),
   formApiSettings: document.getElementById('form-api-settings'),
-  cfgApiUrl: document.getElementById('cfg-api-url'),
+  cfgProjectId: document.getElementById('cfg-project-id'),
   cfgApiKey: document.getElementById('cfg-api-key'),
+  cfgCollection: document.getElementById('cfg-collection'),
   btnSetInvalidKey: document.getElementById('btn-set-invalid-key'),
-  btnRestoreDefaults: document.getElementById('btn-restore-defaults'),
-  
+  btnSeedFirebase: document.getElementById('btn-seed-firebase'),
+
+  // Модалка деталей
   modalDetails: document.getElementById('modal-details'),
   btnCloseDetails: document.getElementById('btn-close-details'),
   detailCode: document.getElementById('detail-code'),
@@ -154,64 +155,97 @@ const DOM = {
 };
 
 // ============================================================================
-// 5. ОСНОВНАЯ ФУНКЦИЯ ЗАПРОСА К API (FETCH С ЗАГОЛОВКОМ X-API-KEY)
+// 5. ПРЕОБРАЗОВАНИЕ ДОКУМЕНТОВ GOOGLE FIRESTORE В ОБЪЕКТЫ JS
 // ============================================================================
-/**
- * Выполняет асинхронный HTTP GET-запрос к API базы данных с передачей токена авторизации.
- * Включает строгую проверку HTTP-кодов (200, 401, 403, 500) и try/catch.
- */
-async function fetchSystemsData() {
+function parseFirestoreDoc(doc) {
+  const id = doc.name ? doc.name.split('/').pop() : 'doc_' + Math.random().toString(36).substring(2, 7);
+  const fields = doc.fields || {};
+  const item = { id };
+
+  for (const [key, valueObj] of Object.entries(fields)) {
+    if (valueObj.stringValue !== undefined) item[key] = valueObj.stringValue;
+    else if (valueObj.integerValue !== undefined) item[key] = Number(valueObj.integerValue);
+    else if (valueObj.doubleValue !== undefined) item[key] = Number(valueObj.doubleValue);
+    else if (valueObj.booleanValue !== undefined) item[key] = valueObj.booleanValue;
+    else item[key] = '';
+  }
+
+  return item;
+}
+
+function toFirestoreFields(obj) {
+  const fields = {};
+  for (const [key, val] of Object.entries(obj)) {
+    if (key === 'id') continue;
+    fields[key] = { stringValue: String(val || '') };
+  }
+  return { fields };
+}
+
+// ============================================================================
+// 6. ЗАПРОС К GOOGLE FIREBASE REST API С ЗАГОЛОВКОМ X-API-KEY
+// ============================================================================
+async function fetchFirebaseData() {
   setLoadingState(true);
-  AppState.lastError = null;
+
+  // Если ключ еще не задан пользователем — предлагаем демо-режим или ввод ключа
+  if (FIREBASE_API_KEY === 'YOUR_FIREBASE_API_KEY_HERE') {
+    setLoadingState(false);
+    updateStatusBadge(false, 'Требуется Firebase Key');
+    renderErrorUI(new Error('Firebase Web API Key не настроен. Нажмите «Сменить X-API-Key» для ввода ключа из Firebase Console или выберите «Демонстрационные данные».'));
+    return;
+  }
+
+  const firestoreEndpoint = getFirestoreUrl();
 
   try {
-    // Формируем заголовки запроса согласно требованиям: передаем 'X-API-Key'
+    console.info(`[Firebase REST API] Запрос документов к Firestore: ${firestoreEndpoint}`);
+
+    // Передаем авторизационный заголовок X-API-Key (и x-goog-api-key для сервисов Google Cloud)
     const headers = {
       'Accept': 'application/json',
-      'X-API-Key': API_KEY
+      'X-API-Key': FIREBASE_API_KEY,
+      'x-goog-api-key': FIREBASE_API_KEY
     };
 
-    console.info(`[API Request] Отправка запроса на ${API_URL}`);
-    console.info(`[Auth Header] X-API-Key: ${API_KEY ? `${API_KEY.substring(0, 8)}...` : 'ОТСУТСТВУЕТ'}`);
-
-    const response = await fetch(API_URL, {
+    const response = await fetch(firestoreEndpoint, {
       method: 'GET',
       headers: headers
     });
 
-    // Обработка статус-кодов сервера
     if (!response.ok) {
-      let errorBody = {};
-      try {
-        errorBody = await response.json();
-      } catch (e) {
-        errorBody = { message: response.statusText };
-      }
+      let errBody = {};
+      try { errBody = await response.json(); } catch(e) {}
 
-      if (response.status === 401) {
-        throw new Error(`401 Unauthorized: Неверный или отсутствующий ключ X-API-Key. ${errorBody.message || ''}`);
-      } else if (response.status === 403) {
-        throw new Error(`403 Forbidden: Доступ запрещён для данного API-ключа. ${errorBody.message || ''}`);
+      if (response.status === 401 || response.status === 403) {
+        throw new Error(`HTTP ${response.status} Unauthorized: Недействительный ключ X-API-Key для Google Firebase. ${errBody.error?.message || ''}`);
       } else if (response.status === 404) {
-        throw new Error(`404 Not Found: Эндпоинт ${API_URL} не найден.`);
+        throw new Error(`HTTP 404: Проект ${FIREBASE_PROJECT_ID} или база данных Firestore не найдены. Создайте базу Firestore в консоли Firebase.`);
       } else {
-        throw new Error(`HTTP ${response.status}: ${errorBody.message || 'Ошибка сервера базы данных'}`);
+        throw new Error(`Google Cloud Error (${response.status}): ${errBody.error?.message || response.statusText}`);
       }
     }
 
-    // Успешный ответ: парсим JSON
-    const result = await response.json();
-    const data = Array.isArray(result) ? result : (result.data || []);
+    const json = await response.json();
+    const documents = json.documents || [];
 
-    AppState.rawItems = data;
-    AppState.isMockData = false;
-    updateStatusBadge(true, 'API Connected (200 OK)');
+    if (documents.length === 0) {
+      // Коллекция существует, но пустая — предложим наполнить тестовыми записями
+      console.warn('[Firebase] Коллекция пуста.');
+      AppState.rawItems = [...INITIAL_SYSTEMS];
+      AppState.isMock = true;
+      updateStatusBadge(true, 'Firebase (Пустая коллекция / Demo)');
+    } else {
+      AppState.rawItems = documents.map(parseFirestoreDoc);
+      AppState.isMock = false;
+      updateStatusBadge(true, 'Google Firebase Online (200 OK)');
+    }
+
     renderSuccessUI();
 
   } catch (error) {
-    console.error('[API Error]', error);
-    AppState.lastError = error;
-    updateStatusBadge(false, 'API Error / Offline');
+    console.error('[Firebase Fetch Error]', error);
+    updateStatusBadge(false, 'Firebase Error');
     renderErrorUI(error);
   } finally {
     setLoadingState(false);
@@ -219,11 +253,52 @@ async function fetchSystemsData() {
 }
 
 // ============================================================================
-// 6. УПРАВЛЕНИЕ СОСТОЯНИЯМИ UI (LOADING, ERROR, CONTENT)
+// 7. НАПОЛНЕНИЕ БАЗЫ ДАННЫХ FIREBASE (SEED FIRESTORE)
 // ============================================================================
-function setLoadingState(isLoading) {
-  AppState.isLoading = isLoading;
-  if (isLoading) {
+async function seedFirebaseDatabase() {
+  if (FIREBASE_API_KEY === 'YOUR_FIREBASE_API_KEY_HERE') {
+    alert('Пожалуйста, сначала укажите валидный Web API Key и Project ID от вашего Firebase!');
+    return;
+  }
+
+  const endpoint = getFirestoreUrl();
+  const btn = DOM.btnSeedFirebase;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Запись в Firebase...';
+
+  try {
+    let createdCount = 0;
+    for (const item of INITIAL_SYSTEMS) {
+      const docPayload = toFirestoreFields(item);
+      const res = await fetch(`${endpoint}?documentId=${encodeURIComponent(item.code)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': FIREBASE_API_KEY,
+          'x-goog-api-key': FIREBASE_API_KEY
+        },
+        body: JSON.stringify(docPayload)
+      });
+      if (res.ok) createdCount++;
+    }
+
+    alert(`Успешно создано ${createdCount} записей в вашей базе данных Google Firebase Firestore!`);
+    DOM.modalSettings.classList.remove('active');
+    fetchFirebaseData();
+  } catch (err) {
+    alert('Ошибка при записи в Firebase: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Заполнить Firebase';
+  }
+}
+
+// ============================================================================
+// 8. УПРАВЛЕНИЕ UI СОСТОЯНИЯМИ
+// ============================================================================
+function setLoadingState(loading) {
+  AppState.isLoading = loading;
+  if (loading) {
     DOM.stateLoading.style.display = 'block';
     DOM.stateError.style.display = 'none';
     DOM.stateContent.style.display = 'none';
@@ -238,21 +313,9 @@ function renderErrorUI(error) {
   DOM.stateError.style.display = 'block';
   DOM.stateContent.style.display = 'none';
 
-  const is401 = error.message.includes('401');
-  const isFailedFetch = error.message.includes('Failed to fetch') || error.name === 'TypeError';
-
-  if (is401) {
-    DOM.errorTitle.textContent = 'Ошибка 401: Недействительный X-API-Key';
-    DOM.errorDesc.textContent = 'Сервер базы данных отклонил запрос из-за отсутствия или невалидности авторизационного заголовка X-API-Key.';
-  } else if (isFailedFetch) {
-    DOM.errorTitle.textContent = 'Сервер API недоступен (Offline)';
-    DOM.errorDesc.textContent = `Не удалось установить соединение с сервером по адресу ${API_URL}. Запустите локальный бэкенд (npm start) или включите демонстрационный режим.`;
-  } else {
-    DOM.errorTitle.textContent = 'Ошибка получения данных из БД';
-    DOM.errorDesc.textContent = error.message || 'Произошла непредвиденная ошибка при обработке ответа.';
-  }
-
-  DOM.errorDetails.textContent = `Запрос: GET ${API_URL}\nЗаголовок: X-API-Key: ${API_KEY}\nПодробности: ${error.stack || error.message}`;
+  DOM.errorTitle.textContent = 'Ошибка подключения к базе данных Google Firebase';
+  DOM.errorDesc.textContent = error.message || 'Проверьте настройки проекта и правильность X-API-Key.';
+  DOM.errorDetails.textContent = `Эндпоинт Firestore: ${getFirestoreUrl()}\nЗаголовок: X-API-Key: ${FIREBASE_API_KEY}\nProject ID: ${FIREBASE_PROJECT_ID}`;
 }
 
 function renderSuccessUI() {
@@ -264,19 +327,18 @@ function renderSuccessUI() {
   applyFiltersAndRender();
 }
 
-function updateStatusBadge(isOnline, text) {
-  DOM.statusIndicator.className = 'api-status-badge ' + (isOnline ? 'online' : 'offline');
+function updateStatusBadge(online, text) {
+  DOM.statusIndicator.className = 'api-status-badge ' + (online ? 'online' : 'offline');
   DOM.statusText.textContent = text;
 }
 
 // ============================================================================
-// 7. ФИЛЬТРАЦИЯ И РЕНДЕРИНГ ДАННЫХ
+// 9. ФИЛЬТРАЦИЯ И РЕНДЕРИНГ КАРТОЧЕК
 // ============================================================================
 function applyFiltersAndRender() {
   const query = (DOM.searchInput.value || '').trim().toLowerCase();
   const archFilter = DOM.filterArchitecture.value;
 
-  // Фильтрация
   AppState.filteredItems = AppState.rawItems.filter(item => {
     const code = (item.code || '').toLowerCase();
     const title = (item.title || '').toLowerCase();
@@ -284,13 +346,12 @@ function applyFiltersAndRender() {
     const db = (item.database_tech || '').toLowerCase();
     const arch = item.architecture_type || '';
 
-    const matchesSearch = !query || code.includes(query) || title.includes(query) || desc.includes(query) || db.includes(query);
-    const matchesArch = !archFilter || arch.includes(archFilter);
+    const matchSearch = !query || code.includes(query) || title.includes(query) || desc.includes(query) || db.includes(query);
+    const matchArch = !archFilter || arch.includes(archFilter);
 
-    return matchesSearch && matchesArch;
+    return matchSearch && matchArch;
   });
 
-  // Переключение состояния отсутствия результатов
   if (AppState.filteredItems.length === 0) {
     DOM.cardsView.style.display = 'none';
     DOM.tableView.style.display = 'none';
@@ -300,7 +361,6 @@ function applyFiltersAndRender() {
 
   DOM.emptyResults.style.display = 'none';
 
-  // Рендеринг в зависимости от выбранного вида (Сетка / Таблица)
   if (AppState.viewMode === 'grid') {
     DOM.cardsView.style.display = 'grid';
     DOM.tableView.style.display = 'none';
@@ -312,13 +372,10 @@ function applyFiltersAndRender() {
   }
 }
 
-/**
- * Рендерит данные в виде адаптивной сетки карточек
- */
 function renderCards(items) {
   DOM.cardsView.innerHTML = items.map((item, index) => {
     const isDraft = item.status === 'Draft';
-    const slaColor = item.sla_level?.includes('99.99') ? 'text-green' : 'text-cyan';
+    const slaColor = (item.sla_level || '').includes('99.99') ? 'text-green' : 'text-cyan';
 
     return `
       <article class="system-card" style="animation-delay: ${index * 0.05}s">
@@ -332,7 +389,7 @@ function renderCards(items) {
           </div>
 
           <h3 class="card-title">${escapeHtml(item.title || 'Информационная система')}</h3>
-          <p class="card-desc">${escapeHtml(item.description || 'Архитектурное решение в рамках проектирования ИС.')}</p>
+          <p class="card-desc">${escapeHtml(item.description || 'Архитектурный компонент проектируемой системы.')}</p>
         </div>
 
         <div>
@@ -346,13 +403,13 @@ function renderCards(items) {
               <span class="meta-val font-mono ${slaColor}">${escapeHtml(item.sla_level || '99.9%')}</span>
             </div>
             <div class="card-meta-item">
-              <span class="meta-key"><i class="fa-solid fa-database"></i> База данных:</span>
-              <span class="meta-val font-mono">${escapeHtml(item.database_tech || 'PostgreSQL')}</span>
+              <span class="meta-key"><i class="fa-solid fa-fire text-amber"></i> База данных:</span>
+              <span class="meta-val font-mono">${escapeHtml(item.database_tech || 'Cloud Firestore')}</span>
             </div>
           </div>
 
           <div class="card-footer">
-            <button class="btn btn-outline btn-sm" onclick="showSystemDetails('${item.id}')">
+            <button class="btn btn-outline btn-sm" onclick="showSystemDetails('${item.id || item.code}')">
               <i class="fa-solid fa-circle-info"></i> Подробнее
             </button>
             <button class="btn btn-secondary btn-sm" onclick="copySystemCode('${item.code}')" title="Скопировать код">
@@ -365,9 +422,6 @@ function renderCards(items) {
   }).join('');
 }
 
-/**
- * Рендерит данные в виде адаптивной таблицы
- */
 function renderTable(items) {
   DOM.tableBody.innerHTML = items.map(item => `
     <tr>
@@ -375,16 +429,14 @@ function renderTable(items) {
       <td><strong>${escapeHtml(item.title || '')}</strong></td>
       <td><i class="fa-solid fa-layer-group text-cyan"></i> ${escapeHtml(item.architecture_type || '')}</td>
       <td><span class="font-mono text-green">${escapeHtml(item.sla_level || '')}</span></td>
-      <td><span class="font-mono">${escapeHtml(item.database_tech || '')}</span></td>
+      <td><span class="font-mono">${escapeHtml(item.database_tech || 'Firestore')}</span></td>
       <td>
         <span class="status-badge ${item.status === 'Draft' ? 'draft' : 'active'}">
           ${escapeHtml(item.status || 'Active')}
         </span>
       </td>
       <td>
-        <button class="btn btn-outline btn-sm" onclick="showSystemDetails('${item.id}')">
-          Инфо
-        </button>
+        <button class="btn btn-outline btn-sm" onclick="showSystemDetails('${item.id || item.code}')">Инфо</button>
       </td>
     </tr>
   `).join('');
@@ -398,11 +450,8 @@ function updateStats() {
   DOM.statMicro.textContent = micro;
 }
 
-// ============================================================================
-// 8. ДЕТАЛЬНЫЙ ПРОСМОТР И ДЕЙСТВИЯ С КАРТОЧКАМИ
-// ============================================================================
-window.showSystemDetails = function(id) {
-  const item = AppState.rawItems.find(i => i.id === id);
+window.showSystemDetails = function(idOrCode) {
+  const item = AppState.rawItems.find(i => i.id === idOrCode || i.code === idOrCode);
   if (!item) return;
 
   DOM.detailCode.textContent = item.code || 'Детали системы';
@@ -412,19 +461,19 @@ window.showSystemDetails = function(id) {
 
     <div style="background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:12px; padding:16px; margin-bottom:20px;">
       <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.85rem;">
-        <span style="color:var(--text-dim)">Архитектурный шаблон:</span>
+        <span style="color:var(--text-dim)">Архитектурный стиль:</span>
         <strong style="color:var(--accent-cyan)">${escapeHtml(item.architecture_type)}</strong>
       </div>
       <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.85rem;">
-        <span style="color:var(--text-dim)">Целевой показатель доступности (SLA):</span>
+        <span style="color:var(--text-dim)">Доступность (SLA):</span>
         <strong style="color:var(--accent-green); font-family:var(--font-mono)">${escapeHtml(item.sla_level)}</strong>
       </div>
       <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.85rem;">
-        <span style="color:var(--text-dim)">Стек базы данных:</span>
+        <span style="color:var(--text-dim)">СУБД / Хранилище:</span>
         <strong style="color:#fff; font-family:var(--font-mono)">${escapeHtml(item.database_tech)}</strong>
       </div>
       <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
-        <span style="color:var(--text-dim)">Статус жизненного цикла:</span>
+        <span style="color:var(--text-dim)">Статус:</span>
         <strong style="color:${item.status === 'Active' ? '#34d399' : '#fbbf24'}">${escapeHtml(item.status)}</strong>
       </div>
     </div>
@@ -439,13 +488,10 @@ window.showSystemDetails = function(id) {
 
 window.copySystemCode = function(code) {
   navigator.clipboard.writeText(code).then(() => {
-    alert(`Код системы «${code}» скопирован в буфер обмена!`);
+    alert(`Идентификатор «${code}» скопирован в буфер обмена!`);
   });
 };
 
-// ============================================================================
-// 9. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ И ОБРАБОТЧИКИ СОБЫТИЙ
-// ============================================================================
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
@@ -456,8 +502,10 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+// ============================================================================
+// 10. ОБРАБОТЧИКИ СОБЫТИЙ И НАСТРОЙКИ
+// ============================================================================
 function initEventHandlers() {
-  // Поиск
   DOM.searchInput.addEventListener('input', () => {
     DOM.btnClearSearch.style.display = DOM.searchInput.value ? 'block' : 'none';
     applyFiltersAndRender();
@@ -469,10 +517,8 @@ function initEventHandlers() {
     applyFiltersAndRender();
   });
 
-  // Фильтр архитектуры
   DOM.filterArchitecture.addEventListener('change', applyFiltersAndRender);
 
-  // Сброс фильтров
   DOM.btnResetFilters.addEventListener('click', () => {
     DOM.searchInput.value = '';
     DOM.filterArchitecture.value = '';
@@ -480,7 +526,6 @@ function initEventHandlers() {
     applyFiltersAndRender();
   });
 
-  // Переключение вида (Сетка / Таблица)
   DOM.btnViewGrid.addEventListener('click', () => {
     AppState.viewMode = 'grid';
     DOM.btnViewGrid.classList.add('active');
@@ -495,76 +540,63 @@ function initEventHandlers() {
     applyFiltersAndRender();
   });
 
-  // Кнопка перезагрузки данных
-  DOM.btnReload.addEventListener('click', fetchSystemsData);
-  DOM.btnErrorRetry.addEventListener('click', fetchSystemsData);
+  DOM.btnReload.addEventListener('click', fetchFirebaseData);
+  DOM.btnErrorRetry.addEventListener('click', fetchFirebaseData);
 
-  // Демонстрационный режим (Offline Mock)
+  // Демонстрационный режим
   DOM.btnUseMock.addEventListener('click', () => {
-    AppState.rawItems = [...MOCK_SYSTEMS_DB];
-    AppState.isMockData = true;
-    updateStatusBadge(true, 'Demo Mode (Mock DB)');
+    AppState.rawItems = [...INITIAL_SYSTEMS];
+    AppState.isMock = true;
+    updateStatusBadge(true, 'Demo Mode (Mock Firestore)');
     renderSuccessUI();
   });
 
-  // Модальное окно настроек
+  // Модалка настроек Firebase
   DOM.btnOpenSettings.addEventListener('click', () => {
-    DOM.cfgApiUrl.value = API_URL;
-    DOM.cfgApiKey.value = API_KEY;
+    DOM.cfgProjectId.value = FIREBASE_PROJECT_ID;
+    DOM.cfgApiKey.value = FIREBASE_API_KEY;
+    DOM.cfgCollection.value = FIREBASE_COLLECTION;
     DOM.modalSettings.classList.add('active');
   });
 
   DOM.btnEditKeyFromError.addEventListener('click', () => {
-    DOM.cfgApiUrl.value = API_URL;
-    DOM.cfgApiKey.value = API_KEY;
+    DOM.cfgProjectId.value = FIREBASE_PROJECT_ID;
+    DOM.cfgApiKey.value = FIREBASE_API_KEY;
+    DOM.cfgCollection.value = FIREBASE_COLLECTION;
     DOM.modalSettings.classList.add('active');
   });
 
-  DOM.btnCloseSettings.addEventListener('click', () => {
-    DOM.modalSettings.classList.remove('active');
+  DOM.btnCloseSettings.addEventListener('click', () => DOM.modalSettings.classList.remove('active'));
+  DOM.btnCloseDetails.addEventListener('click', () => DOM.modalDetails.classList.remove('active'));
+
+  [DOM.modalSettings, DOM.modalDetails].forEach(m => {
+    m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('active'); });
   });
 
-  DOM.btnCloseDetails.addEventListener('click', () => {
-    DOM.modalDetails.classList.remove('active');
-  });
-
-  // Закрытие модалок по клику на оверлей
-  [DOM.modalSettings, DOM.modalDetails].forEach(modal => {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.classList.remove('active');
-    });
-  });
-
-  // Тест 401 Unauthorized
   DOM.btnSetInvalidKey.addEventListener('click', () => {
-    DOM.cfgApiKey.value = 'invalid_test_key_401';
+    DOM.cfgApiKey.value = 'invalid_firebase_key_401';
   });
 
-  // Сброс настроек к дефолтным
-  DOM.btnRestoreDefaults.addEventListener('click', () => {
-    DOM.cfgApiUrl.value = DEFAULT_API_URL;
-    DOM.cfgApiKey.value = DEFAULT_API_KEY;
-  });
+  DOM.btnSeedFirebase.addEventListener('click', seedFirebaseDatabase);
 
-  // Сохранение настроек API
+  // Сохранение настроек
   DOM.formApiSettings.addEventListener('submit', (e) => {
     e.preventDefault();
-    API_URL = DOM.cfgApiUrl.value.trim();
-    API_KEY = DOM.cfgApiKey.value.trim();
+    FIREBASE_PROJECT_ID = DOM.cfgProjectId.value.trim();
+    FIREBASE_API_KEY = DOM.cfgApiKey.value.trim();
+    FIREBASE_COLLECTION = DOM.cfgCollection.value.trim() || 'systems';
 
-    localStorage.setItem('is_project_api_url', API_URL);
-    localStorage.setItem('is_project_api_key', API_KEY);
+    localStorage.setItem('fb_project_id', FIREBASE_PROJECT_ID);
+    localStorage.setItem('fb_api_key', FIREBASE_API_KEY);
+    localStorage.setItem('fb_collection', FIREBASE_COLLECTION);
 
     DOM.modalSettings.classList.remove('active');
-    fetchSystemsData();
+    fetchFirebaseData();
   });
 }
 
-// ============================================================================
-// 10. ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
-// ============================================================================
+// Запуск при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
   initEventHandlers();
-  // Автоматический запрос к API при старте страницы
-  fetchSystemsData();
+  fetchFirebaseData();
 });

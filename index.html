@@ -29,11 +29,11 @@
     <div class="container nav-container">
       <div class="brand">
         <div class="logo-icon">
-          <i class="fa-solid fa-database"></i>
+          <i class="fa-solid fa-fire text-amber"></i>
         </div>
         <div class="brand-text">
           <span class="brand-title">IS-REGISTRY</span>
-          <span class="brand-subtitle">Курсовой проект • Проектирование ИС</span>
+          <span class="brand-subtitle">Курсовой проект • Google Firebase + Netlify</span>
         </div>
       </div>
 
@@ -65,15 +65,15 @@
     <!-- Hero / Заголовок и вводная карточка -->
     <section class="hero-section">
       <div class="hero-badge">
-        <i class="fa-solid fa-shield-halved"></i>
-        <span>Защищённый доступ: REST API • Header X-API-Key</span>
+        <i class="fa-solid fa-fire text-amber"></i>
+        <span>Облачная база данных: Google Firebase Firestore • Header X-API-Key</span>
       </div>
       <h1 class="hero-title">
         Реестр информационных систем <br class="hidden-mobile">
         <span class="gradient-text">и архитектурных решений</span>
       </h1>
       <p class="hero-desc">
-        Клиентское Single Page Application (SPA), осуществляющее получение данных из СУБД через защищённый REST API с проверкой авторизационного токена <code class="inline-code">X-API-Key</code>.
+        Клиентское SPA на <strong>Netlify</strong>, подключённое к облачной NoSQL базе данных <strong>Google Firebase Firestore</strong> через официальный REST API с авторизацией по токену <code class="inline-code">X-API-Key</code>.
       </p>
     </section>
 
@@ -245,13 +245,13 @@
     </div>
   </footer>
 
-  <!-- ==================== МОДАЛЬНОЕ ОКНО: НАСТРОЙКИ API И КЛЮЧА ==================== -->
+  <!-- ==================== МОДАЛЬНОЕ ОКНО: НАСТРОЙКИ FIREBASE И X-API-KEY ==================== -->
   <div class="modal-overlay" id="modal-settings">
     <div class="modal-box">
       <div class="modal-header">
         <div class="modal-title">
-          <i class="fa-solid fa-sliders text-accent"></i>
-          <span>Параметры API и базы данных</span>
+          <i class="fa-solid fa-fire text-amber"></i>
+          <span>Связка с Google Firebase Firestore</span>
         </div>
         <button class="modal-close" id="btn-close-settings" aria-label="Закрыть">
           <i class="fa-solid fa-xmark"></i>
@@ -259,41 +259,54 @@
       </div>
       <form class="modal-body" id="form-api-settings">
         <p class="modal-desc">
-          Вы можете протестировать связку с любым внешним REST API, указав URL эндпоинта и авторизационный токен <code>X-API-Key</code>:
+          Укажите параметры вашего проекта из консоли <a href="https://console.firebase.google.com" target="_blank" style="color:var(--accent-cyan); text-decoration:underline;">Google Firebase</a>. Данные сохраняются в браузере:
         </p>
 
         <div class="form-group">
-          <label for="cfg-api-url">API URL (Эндпоинт):</label>
+          <label for="cfg-project-id">Firebase Project ID (Идентификатор проекта):</label>
           <input 
-            type="url" 
-            id="cfg-api-url" 
+            type="text" 
+            id="cfg-project-id" 
             class="form-control font-mono" 
             required 
-            placeholder="http://localhost:3000/api/v1/systems"
+            placeholder="например: is-presentation-v2"
           >
-          <span class="field-hint">Адрес вашего бэкенда или сервиса данных.</span>
+          <span class="field-hint">Идентификатор из Project Settings в Firebase Console.</span>
         </div>
 
         <div class="form-group">
-          <label for="cfg-api-key">Авторизационный заголовок <strong>X-API-Key</strong>:</label>
+          <label for="cfg-api-key">Авторизационный токен <strong>X-API-Key</strong> (Web API Key):</label>
           <div class="input-action-row">
             <input 
               type="text" 
               id="cfg-api-key" 
               class="form-control font-mono" 
               required 
-              placeholder="xak_live_master_9948201"
+              placeholder="AIzaSyB..."
             >
             <button type="button" class="btn btn-secondary btn-sm" id="btn-set-invalid-key" title="Для проверки ошибки 401 Unauthorized">
               Тест 401
             </button>
           </div>
-          <span class="field-hint">Ключ передаётся в HTTP-заголовке: <code>X-API-Key: YOUR_KEY</code></span>
+          <span class="field-hint">Передаётся в заголовке <code>X-API-Key</code> и <code>x-goog-api-key</code> в REST API Firestore.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="cfg-collection">Коллекция документов в Firestore:</label>
+          <input 
+            type="text" 
+            id="cfg-collection" 
+            class="form-control font-mono" 
+            value="systems"
+            placeholder="systems"
+          >
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn btn-outline" id="btn-restore-defaults">По умолчанию</button>
-          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Применить и загрузить</button>
+          <button type="button" class="btn btn-outline" id="btn-seed-firebase" title="Создать тестовые записи в Firebase">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Заполнить Firebase
+          </button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Сохранить и подключить</button>
         </div>
       </form>
     </div>
