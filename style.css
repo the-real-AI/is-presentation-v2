@@ -4292,3 +4292,255 @@ body {
   .filters-wrapper { flex-wrap: wrap; }
   .form-select { flex: 1; }
 }
+
+
+
+/* ==========================================================================
+   ПОЛНАЯ МОБИЛЬНАЯ АДАПТАЦИЯ (UNIVERSAL MOBILE-FIRST RESPONSIVE FIX)
+   Обеспечивает идеальное отображение на смартфонах и планшетах (320px - 768px)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  /* 1. Viewport и контейнер презентации */
+  :root {
+    --header-height: 58px;
+    --dock-height: 64px;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  .presentation-container {
+    height: calc(100dvh - var(--header-height));
+    height: calc(100vh - var(--header-height)); /* fallback */
+    margin-top: var(--header-height);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* 2. Слайд: выравнивание СВЕРХУ и свободный тач-скролл до самого низа */
+  .slide {
+    padding: 12px 14px 110px 14px !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+  }
+
+  .slide-inner {
+    max-height: none !important;
+    height: auto !important;
+    overflow-y: visible !important;
+    padding-right: 0 !important;
+    padding-bottom: 40px !important;
+    width: 100% !important;
+  }
+
+  /* 3. Адаптивная типографика для небольших экранов */
+  .slide-header {
+    margin-bottom: 12px !important;
+  }
+
+  .slide-header h2 {
+    font-size: 1.3rem !important;
+    line-height: 1.3 !important;
+    margin-bottom: 6px !important;
+  }
+
+  .slide-header p {
+    font-size: 0.85rem !important;
+    line-height: 1.4 !important;
+    margin-bottom: 10px !important;
+  }
+
+  .slide-tag {
+    font-size: 0.7rem !important;
+    padding: 3px 8px !important;
+    margin-bottom: 6px !important;
+  }
+
+  /* 4. Колонки превращаются в вертикальный стек на 100% ширины */
+  .content-columns-2,
+  .content-columns-custom,
+  .hero-split-layout,
+  .grid-2,
+  .grid-3,
+  .grid-4,
+  .plan-grid,
+  .conclusions-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    width: 100% !important;
+  }
+
+  /* 5. Карточки контента */
+  .card-glass,
+  .visual-diagram-card {
+    padding: 14px 16px !important;
+    width: 100% !important;
+    border-radius: 14px !important;
+  }
+
+  .card-glass h3 {
+    font-size: 1.05rem !important;
+    margin-bottom: 10px !important;
+  }
+
+  .lead-text {
+    font-size: 0.88rem !important;
+    line-height: 1.45 !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* 6. Списки и составные элементы слайдов */
+  .system-parts-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .sys-part-item {
+    padding: 10px 12px !important;
+    font-size: 0.84rem !important;
+    gap: 10px !important;
+  }
+
+  .sys-part-item strong {
+    font-size: 0.88rem !important;
+  }
+
+  .sys-part-item span {
+    font-size: 0.8rem !important;
+    line-height: 1.35 !important;
+  }
+
+  .sys-part-icon {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* 7. Пример и SVG диаграммы */
+  .example-box {
+    padding: 12px !important;
+    margin-top: 12px !important;
+    font-size: 0.82rem !important;
+  }
+
+  .example-box-header {
+    font-size: 0.82rem !important;
+    margin-bottom: 4px !important;
+  }
+
+  .example-box-desc {
+    font-size: 0.8rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .svg-diagram-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+  }
+
+  .boehm-svg-chart {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 200px !important;
+  }
+
+  /* 8. Нижняя панель навигации (Dock) */
+  .bottom-dock {
+    height: var(--dock-height) !important;
+    padding: 8px 12px !important;
+    background: rgba(6, 8, 13, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6) !important;
+  }
+
+  .dock-inner {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .dock-btn {
+    flex: 1 !important;
+    justify-content: center !important;
+    padding: 10px 14px !important;
+    font-size: 0.85rem !important;
+    border-radius: 10px !important;
+    min-height: 44px !important;
+  }
+
+  .dock-slide-list {
+    display: none !important;
+  }
+
+  /* 9. Скрытие Smartboard стрелок на смартфонах */
+  .smartboard-touch-nav {
+    display: none !important;
+  }
+
+  /* 10. Шапка на мобильных */
+  .top-nav {
+    height: var(--header-height) !important;
+    padding: 6px 10px !important;
+  }
+
+  .nav-left {
+    gap: 8px !important;
+  }
+
+  .logo-pill {
+    padding: 4px 10px !important;
+  }
+
+  .logo-text {
+    font-size: 0.78rem !important;
+    letter-spacing: 0.04em !important;
+  }
+
+  .slide-counter-wrapper {
+    padding: 4px 8px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .nav-btn:not(.mobile-menu-toggle) {
+    display: none !important; /* Убираем второстепенные десктопные кнопки из шапки */
+  }
+
+  .user-auth-widget {
+    display: flex !important;
+  }
+
+  .user-chip {
+    padding: 4px 8px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .user-chip-name {
+    max-width: 70px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .slide-header h2 {
+    font-size: 1.18rem !important;
+  }
+
+  .hero-title {
+    font-size: 1.8rem !important;
+  }
+
+  .hero-badge-pill {
+    font-size: 0.75rem !important;
+  }
+}
