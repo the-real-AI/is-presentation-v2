@@ -29,18 +29,43 @@
     <i class="fa-solid fa-chevron-right"></i>
   </button>
 
-  <!-- Top Navigation & Controls Bar -->
+  <!-- Top Navigation & Controls Bar (Responsive Single Page App Header) -->
   <header class="top-nav">
     <div class="nav-left">
-      <div class="logo-pill">
+      <button class="mobile-menu-toggle" id="btn-mobile-menu" aria-label="Открыть мобильное меню">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+
+      <div class="logo-pill" onclick="SpaRouter.navigate('presentation')" style="cursor:pointer;" title="На главную / Презентация">
         <span class="pulse-dot"></span>
         <span class="logo-text">ИС • ПРОЕКТИРОВАНИЕ</span>
       </div>
+
+      <!-- SPA Views Navigation Tabs -->
+      <nav class="spa-nav-tabs" aria-label="Разделы приложения">
+        <button class="spa-nav-tab active" data-view="presentation" title="Интерактивная презентация (26 слайдов)">
+          <i class="fa-solid fa-chalkboard"></i>
+          <span>Слайды</span>
+        </button>
+        <button class="spa-nav-tab" data-view="database" title="База данных систем (SQLite API)">
+          <i class="fa-solid fa-database"></i>
+          <span>База данных ИС</span>
+        </button>
+        <button class="spa-nav-tab" data-view="api-console" title="Консоль тестирования API с X-API-Key">
+          <i class="fa-solid fa-code"></i>
+          <span>API & X-API-Key</span>
+        </button>
+        <button class="spa-nav-tab" data-view="profile" id="nav-profile-tab" title="JWT Аутентификация и профиль">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>JWT Авторизация</span>
+        </button>
+      </nav>
+
       <div class="topic-title" id="current-slide-topic">Титульный лист</div>
     </div>
 
     <div class="nav-center">
-      <div class="slide-counter-wrapper">
+      <div class="slide-counter-wrapper" id="slide-counter-wrapper">
         <span class="counter-label">Слайд</span>
         <span class="counter-current" id="counter-current">01</span>
         <span class="counter-divider">/</span>
@@ -49,6 +74,11 @@
     </div>
 
     <div class="nav-right">
+      <!-- JWT User Account / Auth Widget -->
+      <div class="user-auth-widget" id="user-auth-widget">
+        <!-- Injected dynamically by AuthModule -->
+      </div>
+
       <!-- Presentation Timer -->
       <div class="timer-badge" id="timer-badge" title="Таймер выступления">
         <i class="fa-regular fa-clock"></i>
@@ -85,6 +115,9 @@
   <div class="progress-bar-container">
     <div class="progress-bar-fill" id="progress-bar-fill"></div>
   </div>
+
+  <!-- ==================== SPA VIEW 1: ИНТЕРАКТИВНАЯ ПРЕЗЕНТАЦИЯ (СЛАЙДЫ) ==================== -->
+  <div class="spa-view active" id="view-presentation">
 
   <!-- Slides Viewport Container -->
   <main class="presentation-container" id="presentation-container">
@@ -2104,6 +2137,510 @@
     </div>
   </footer>
 
+  </div> <!-- /#view-presentation -->
+
+  <!-- ==================== SPA VIEW 2: БАЗА ДАННЫХ ИС (SQLITE API) ==================== -->
+  <div class="spa-view" id="view-database" style="display:none;">
+    <div class="spa-content-container">
+      <div class="spa-header-bar">
+        <div class="spa-header-info">
+          <div class="badge-tech"><i class="fa-solid fa-database"></i> SQLite Native v24 Storage</div>
+          <h2 class="spa-title">Реестр проектируемых систем и архитектур</h2>
+          <p class="spa-subtitle">
+            Централизованная реляционная база данных архитектурных решений. Доступ к записям открыт через REST API при наличии заголовка <code>X-API-Key</code>.
+          </p>
+        </div>
+        <div class="spa-header-actions">
+          <button class="btn btn-primary" onclick="DatabaseModule.openAddModal()">
+            <i class="fa-solid fa-plus"></i>
+            <span>Добавить систему в БД</span>
+          </button>
+          <button class="btn btn-secondary" onclick="DatabaseModule.loadSystems(true)">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span>Обновить данные</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Grid -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon"><i class="fa-solid fa-server"></i></div>
+          <div class="metric-data">
+            <span class="metric-val" id="db-stat-total">0</span>
+            <span class="metric-label">Всего систем в БД</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon text-cyan"><i class="fa-solid fa-network-wired"></i></div>
+          <div class="metric-data">
+            <span class="metric-val" id="db-stat-micro">0</span>
+            <span class="metric-label">Микросервисов</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon text-green"><i class="fa-solid fa-shield-heart"></i></div>
+          <div class="metric-data">
+            <span class="metric-val" id="db-stat-sla">99.95%</span>
+            <span class="metric-label">Средний SLA</span>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon text-purple"><i class="fa-solid fa-key"></i></div>
+          <div class="metric-data">
+            <span class="metric-val" id="db-stat-keys">X-API-Key</span>
+            <span class="metric-label">Защита доступа</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search & Filters Toolbar -->
+      <div class="db-toolbar glass-panel">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="db-search-input" placeholder="Поиск по коду, названию, СУБД или типу архитектуры..." oninput="DatabaseModule.filterSystems()">
+        </div>
+        <div class="filter-group">
+          <label><i class="fa-solid fa-filter"></i> Архитектура:</label>
+          <select id="db-filter-arch" onchange="DatabaseModule.filterSystems()">
+            <option value="">Все типы архитектур</option>
+            <option value="Microservices">Microservices</option>
+            <option value="Monolith">Modular Monolith</option>
+            <option value="API Gateway">API Gateway</option>
+            <option value="Lambda">Lambda / Lakehouse</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Database Systems Table / Responsive Cards -->
+      <div class="glass-panel table-panel">
+        <div class="table-responsive">
+          <table class="db-table" id="systems-table">
+            <thead>
+              <tr>
+                <th>Код системы</th>
+                <th>Наименование</th>
+                <th>Архитектурный стиль</th>
+                <th>SLA</th>
+                <th>Стек СУБД</th>
+                <th>Статус</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody id="systems-tbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+        <div class="table-empty-state" id="db-empty-state" style="display:none;">
+          <i class="fa-solid fa-folder-open"></i>
+          <p>Записи не найдены или нет доступа по X-API-Key</p>
+        </div>
+      </div>
+    </div>
+  </div> <!-- /#view-database -->
+
+  <!-- ==================== SPA VIEW 3: API & X-API-KEY CONSOLE ==================== -->
+  <div class="spa-view" id="view-api-console" style="display:none;">
+    <div class="spa-content-container">
+      <div class="spa-header-bar">
+        <div class="spa-header-info">
+          <div class="badge-tech"><i class="fa-solid fa-terminal"></i> Interactive API Explorer</div>
+          <h2 class="spa-title">Консоль тестирования API с авторизацией по X-API-Key</h2>
+          <p class="spa-subtitle">
+            Протестируйте защищённые эндпоинты базы данных. Запросы без заголовка <code>X-API-Key</code> блокируются со статусом <code>401 Unauthorized</code>.
+          </p>
+        </div>
+      </div>
+
+      <!-- Split Layout: Request Builder & Response Inspector -->
+      <div class="api-split-layout">
+        <!-- Left Column: Request Configuration -->
+        <div class="glass-panel api-card">
+          <div class="api-card-header">
+            <h3><i class="fa-solid fa-paper-plane text-cyan"></i> Параметры HTTP запроса</h3>
+            <span class="badge-status online" id="api-server-status"><span class="dot"></span> Сервер доступен</span>
+          </div>
+
+          <div class="form-group">
+            <label for="api-key-input">
+              <span>Заголовок <strong>X-API-Key</strong> (Обязательно для доступа к БД):</span>
+              <button class="btn-link" onclick="ApiConsoleModule.useMyKey()" title="Вставить ключ из активного профиля">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Вставить мой ключ
+              </button>
+            </label>
+            <div class="input-with-action">
+              <input type="text" id="api-key-input" class="form-input code-font" placeholder="xak_live_..." value="xak_live_master_9948201">
+              <button class="btn btn-sm btn-secondary" onclick="ApiConsoleModule.clearKey()" title="Очистить ключ для проверки 401 ошибки">
+                Очистить
+              </button>
+            </div>
+            <span class="field-hint">Для проверки ошибки 401 Unauthorized нажмите «Очистить» и отправьте запрос.</span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-4">
+              <label for="api-method">Метод:</label>
+              <select id="api-method" class="form-input" onchange="ApiConsoleModule.onMethodChange()">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="DELETE">DELETE</option>
+              </select>
+            </div>
+            <div class="form-group col-8">
+              <label for="api-endpoint">Эндпоинт базы данных:</label>
+              <select id="api-endpoint" class="form-input" onchange="ApiConsoleModule.onEndpointChange()">
+                <option value="/api/v1/systems">/api/v1/systems (Все системы из БД)</option>
+                <option value="/api/v1/slides">/api/v1/slides (Список 26 слайдов)</option>
+                <option value="/api/v1/stats">/api/v1/stats (Метрики и аудит БД)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" id="api-body-group" style="display:none;">
+            <label for="api-body-input">Тело запроса (JSON Body):</label>
+            <textarea id="api-body-input" class="form-input code-font" rows="5">{
+  "code": "IS-SECURITY-IAM",
+  "title": "Шлюз аутентификации и SSO",
+  "architecture_type": "Microservices",
+  "sla_level": "99.99%",
+  "status": "Active",
+  "database_tech": "Redis + Vault",
+  "description": "Централизованная верификация JWT токенов и аудит безопасности"
+}</textarea>
+          </div>
+
+          <div class="api-actions">
+            <button class="btn btn-primary btn-block" id="btn-send-request" onclick="ApiConsoleModule.sendRequest()">
+              <i class="fa-solid fa-bolt"></i>
+              <span>Выполнить запрос к API</span>
+            </button>
+          </div>
+
+          <!-- cURL command preview -->
+          <div class="curl-box">
+            <div class="curl-header">
+              <span>cURL команда терминала:</span>
+              <button class="btn-copy" onclick="ApiConsoleModule.copyCurl()" title="Копировать в буфер">
+                <i class="fa-regular fa-copy"></i>
+              </button>
+            </div>
+            <pre><code id="curl-preview" class="code-font">curl -H "X-API-Key: xak_live_master_9948201" http://localhost:3000/api/v1/systems</code></pre>
+          </div>
+        </div>
+
+        <!-- Right Column: Response Inspector -->
+        <div class="glass-panel api-card">
+          <div class="api-card-header">
+            <h3><i class="fa-solid fa-code-compare text-purple"></i> Ответ сервера (HTTP Response)</h3>
+            <div class="response-status-badge" id="response-status-badge">
+              <span class="status-code">---</span>
+              <span class="status-text">Ожидание запроса</span>
+            </div>
+          </div>
+
+          <div class="response-meta" id="response-meta" style="display:none;">
+            <span><i class="fa-regular fa-clock"></i> Время: <strong id="res-time">0 ms</strong></span>
+            <span><i class="fa-solid fa-database"></i> Источник: <strong id="res-source">SQLite</strong></span>
+          </div>
+
+          <div class="json-viewer-container">
+            <pre><code id="json-response" class="code-font json-highlight">// Нажмите «Выполнить запрос к API» для получения данных...</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div> <!-- /#view-api-console -->
+
+  <!-- ==================== SPA VIEW 4: JWT АВТОРИЗАЦИЯ И ПРОФИЛЬ ==================== -->
+  <div class="spa-view" id="view-profile" style="display:none;">
+    <div class="spa-content-container">
+      
+      <!-- Unauthenticated State: Login / Register Forms -->
+      <div id="auth-unauth-container" class="auth-box-wrapper">
+        <div class="glass-panel auth-card">
+          <div class="auth-tabs">
+            <button class="auth-tab active" id="tab-btn-login" onclick="AuthModule.switchTab('login')">
+              <i class="fa-solid fa-right-to-bracket"></i> Вход (JWT)
+            </button>
+            <button class="auth-tab" id="tab-btn-register" onclick="AuthModule.switchTab('register')">
+              <i class="fa-solid fa-user-plus"></i> Регистрация
+            </button>
+          </div>
+
+          <!-- Login Form -->
+          <form id="form-login" class="auth-form" onsubmit="AuthModule.handleLogin(event)">
+            <h3 class="auth-title">Вход в систему проектирования</h3>
+            <p class="auth-subtitle">Получите JWT Bearer токен и персональный X-API-Key для доступа к БД</p>
+
+            <div class="form-group">
+              <label for="login-email">Email или имя пользователя:</label>
+              <input type="text" id="login-email" class="form-input" required placeholder="admin@system.local" value="admin@system.local">
+            </div>
+
+            <div class="form-group">
+              <label for="login-password">Пароль:</label>
+              <input type="password" id="login-password" class="form-input" required placeholder="••••••••" value="admin123">
+            </div>
+
+            <div class="form-error" id="login-error" style="display:none;"></div>
+
+            <button type="submit" class="btn btn-primary btn-block">
+              <i class="fa-solid fa-key"></i> Войти и выпустить JWT
+            </button>
+
+            <!-- Quick Demo Credentials -->
+            <div class="demo-logins-box">
+              <span class="demo-label">Быстрый тестовый вход (Демо):</span>
+              <div class="demo-buttons">
+                <button type="button" class="btn btn-xs btn-outline" onclick="AuthModule.fillDemo('admin@system.local', 'admin123')">
+                  <i class="fa-solid fa-crown text-accent"></i> Admin (admin123)
+                </button>
+                <button type="button" class="btn btn-xs btn-outline" onclick="AuthModule.fillDemo('architect@system.local', 'pass123')">
+                  <i class="fa-solid fa-compass-drafting text-cyan"></i> Architect (pass123)
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <!-- Register Form -->
+          <form id="form-register" class="auth-form" style="display:none;" onsubmit="AuthModule.handleRegister(event)">
+            <h3 class="auth-title">Регистрация архитектора ИС</h3>
+            <p class="auth-subtitle">Создайте новый профиль и получите персональный X-API-Key</p>
+
+            <div class="form-group">
+              <label for="reg-username">Имя пользователя (Никнейм):</label>
+              <input type="text" id="reg-username" class="form-input" required placeholder="lead_architect">
+            </div>
+
+            <div class="form-group">
+              <label for="reg-email">Email:</label>
+              <input type="email" id="reg-email" class="form-input" required placeholder="architect@domain.com">
+            </div>
+
+            <div class="form-group">
+              <label for="reg-role">Роль в проекте:</label>
+              <select id="reg-role" class="form-input">
+                <option value="Solution Architect">Solution Architect (Системный архитектор)</option>
+                <option value="Administrator">Administrator (Администратор ИС)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="reg-password">Пароль:</label>
+              <input type="password" id="reg-password" class="form-input" required minlength="6" placeholder="Минимум 6 символов">
+            </div>
+
+            <div class="form-error" id="reg-error" style="display:none;"></div>
+
+            <button type="submit" class="btn btn-primary btn-block">
+              <i class="fa-solid fa-user-check"></i> Зарегистрироваться
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Authenticated State: User Profile & JWT Inspector -->
+      <div id="auth-profile-container" style="display:none;">
+        <div class="profile-grid">
+          
+          <!-- User Profile Card -->
+          <div class="glass-panel profile-card">
+            <div class="profile-header">
+              <div class="profile-avatar" id="prof-avatar">A</div>
+              <div class="profile-meta">
+                <h3 id="prof-username">Admin</h3>
+                <span class="user-role-badge" id="prof-role">Administrator</span>
+                <span class="user-email" id="prof-email">admin@system.local</span>
+              </div>
+            </div>
+
+            <div class="profile-divider"></div>
+
+            <!-- X-API-Key Section -->
+            <div class="api-key-profile-box">
+              <div class="key-box-title">
+                <span><i class="fa-solid fa-key text-cyan"></i> Ваш персональный X-API-Key</span>
+                <button class="btn btn-xs btn-outline" onclick="AuthModule.generateNewApiKey()">
+                  <i class="fa-solid fa-arrows-rotate"></i> Сгенерировать новый
+                </button>
+              </div>
+              <div class="key-input-wrapper">
+                <input type="text" id="prof-api-key" readonly class="code-font" value="xak_live_master_9948201">
+                <button class="btn-copy" onclick="AuthModule.copyApiKey()" title="Копировать X-API-Key">
+                  <i class="fa-regular fa-copy"></i>
+                </button>
+              </div>
+              <p class="key-hint">Передавайте этот ключ в HTTP заголовке <code>X-API-Key</code> при обращении к REST API базы данных.</p>
+            </div>
+
+            <button class="btn btn-danger btn-block" onclick="AuthModule.logout()">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i> Выйти из аккаунта
+            </button>
+          </div>
+
+          <!-- JWT Token Inspector -->
+          <div class="glass-panel jwt-inspector-card">
+            <div class="jwt-header">
+              <h3><i class="fa-solid fa-shield-halved text-purple"></i> Инспектор активного JWT токена</h3>
+              <span class="badge-status online"><span class="dot"></span> Подпись HS256 валидна</span>
+            </div>
+
+            <div class="jwt-visualizer">
+              <label>Сырой JWT токен (Encoded Bearer Token):</label>
+              <div class="jwt-token-raw-box">
+                <span class="jwt-part header" id="jwt-raw-header">eyJhbGciOiJIUzI1Ni...</span>.<span class="jwt-part payload" id="jwt-raw-payload">eyJpZCI6InVzcl9hZG1...</span>.<span class="jwt-part signature" id="jwt-raw-sig">c8e9f...</span>
+              </div>
+            </div>
+
+            <div class="jwt-decoded-grid">
+              <div class="jwt-decoded-block">
+                <span class="jwt-block-title text-red"><i class="fa-solid fa-file-code"></i> HEADER (Алгоритм и тип)</span>
+                <pre><code class="code-font">{
+  "alg": "HS256",
+  "typ": "JWT"
+}</code></pre>
+              </div>
+
+              <div class="jwt-decoded-block">
+                <span class="jwt-block-title text-purple"><i class="fa-solid fa-id-card"></i> PAYLOAD: DATA (Заявленные Claims)</span>
+                <pre><code id="jwt-payload-view" class="code-font">{
+  "sub": "usr_admin_001",
+  "role": "Administrator",
+  "iat": 1740000000,
+  "exp": 1740086400
+}</code></pre>
+              </div>
+            </div>
+
+            <div class="jwt-footer-note">
+              <i class="fa-solid fa-lock text-accent"></i>
+              <span>Токен подписан секретным ключом сервера по стандарту RFC 7519. Срок действия сессии: 24 часа.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div> <!-- /#view-profile -->
+
+  <!-- ==================== MOBILE NAVIGATION DRAWER (МУЛЬТИПЛАТФОРМЕННЫЙ) ==================== -->
+  <div class="mobile-drawer-overlay" id="mobile-drawer-overlay" onclick="SpaRouter.closeMobileMenu()"></div>
+  <aside class="mobile-drawer" id="mobile-drawer" aria-label="Мобильное меню">
+    <div class="mobile-drawer-header">
+      <div class="logo-pill">
+        <span class="pulse-dot"></span>
+        <span class="logo-text">ИС • МЕНЮ</span>
+      </div>
+      <button class="drawer-close-btn" onclick="SpaRouter.closeMobileMenu()" aria-label="Закрыть меню">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="mobile-drawer-body">
+      <div class="drawer-section-label">Разделы Single Page App</div>
+      <nav class="drawer-nav">
+        <button class="drawer-nav-item active" data-view="presentation" onclick="SpaRouter.navigate('presentation')">
+          <i class="fa-solid fa-chalkboard"></i>
+          <span>Слайды презентации (26)</span>
+        </button>
+        <button class="drawer-nav-item" data-view="database" onclick="SpaRouter.navigate('database')">
+          <i class="fa-solid fa-database"></i>
+          <span>База данных систем (SQLite)</span>
+        </button>
+        <button class="drawer-nav-item" data-view="api-console" onclick="SpaRouter.navigate('api-console')">
+          <i class="fa-solid fa-code"></i>
+          <span>API & X-API-Key Консоль</span>
+        </button>
+        <button class="drawer-nav-item" data-view="profile" onclick="SpaRouter.navigate('profile')">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>JWT Профиль / Вход</span>
+        </button>
+      </nav>
+
+      <div class="drawer-section-label">Быстрые действия</div>
+      <div class="drawer-controls">
+        <button class="btn btn-outline btn-block" onclick="Presentation.toggleOverviewModal(); SpaRouter.closeMobileMenu();">
+          <i class="fa-solid fa-table-cells"></i> Сетка всех 26 слайдов
+        </button>
+        <button class="btn btn-outline btn-block" onclick="Presentation.toggleVideoModal(); SpaRouter.closeMobileMenu();">
+          <i class="fa-solid fa-video"></i> Видеоматериалы
+        </button>
+        <button class="btn btn-outline btn-block" onclick="Presentation.toggleHelpModal(); SpaRouter.closeMobileMenu();">
+          <i class="fa-solid fa-keyboard"></i> Справка по клавишам
+        </button>
+      </div>
+
+      <div class="drawer-device-info">
+        <i class="fa-solid fa-mobile-screen"></i>
+        <span id="mobile-device-meta">Мультиплатформенный режим активен</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== МОДАЛЬНОЕ ОКНО: ДОБАВЛЕНИЕ СИСТЕМЫ В БД ==================== -->
+  <div class="modal-overlay" id="modal-add-system">
+    <div class="modal-box modal-medium">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-database text-accent"></i>
+          <span>Добавить архитектурную систему в базу данных</span>
+        </div>
+        <button class="modal-close" onclick="DatabaseModule.closeAddModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form class="modal-body" onsubmit="DatabaseModule.handleAddSubmit(event)">
+        <div class="form-row">
+          <div class="form-group col-6">
+            <label for="sys-code">Код системы (Код-идентификатор):</label>
+            <input type="text" id="sys-code" class="form-input" required placeholder="IS-PAYMENT-HUB">
+          </div>
+          <div class="form-group col-6">
+            <label for="sys-title">Наименование системы:</label>
+            <input type="text" id="sys-title" class="form-input" required placeholder="Процессинг платежей">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-6">
+            <label for="sys-arch">Архитектурный стиль:</label>
+            <select id="sys-arch" class="form-input">
+              <option value="Microservices">Microservices</option>
+              <option value="Modular Monolith">Modular Monolith</option>
+              <option value="Event-Driven (EDA)">Event-Driven (EDA)</option>
+              <option value="Cloud Native / Serverless">Cloud Native / Serverless</option>
+              <option value="API Gateway">API Gateway Pattern</option>
+            </select>
+          </div>
+          <div class="form-group col-6">
+            <label for="sys-sla">Целевой уровень надежности (SLA):</label>
+            <select id="sys-sla" class="form-input">
+              <option value="99.99%">99.99% (Высокая доступность)</option>
+              <option value="99.95%">99.95% (Бизнес-критичный)</option>
+              <option value="99.9%">99.9% (Стандартный)</option>
+              <option value="99.5%">99.5% (Аналитический)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="sys-db">Технологический стек СУБД:</label>
+          <input type="text" id="sys-db" class="form-input" placeholder="PostgreSQL, Redis, Kafka, ClickHouse" value="PostgreSQL + Redis">
+        </div>
+
+        <div class="form-group">
+          <label for="sys-desc">Описание архитектурного назначения:</label>
+          <textarea id="sys-desc" class="form-input" rows="3" placeholder="Краткое описание функциональности и границ ответственности..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="DatabaseModule.closeAddModal()">Отмена</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Сохранить в SQLite</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ==================== МОДАЛЬНЫЕ ОКНА И ОВЕРЛЕИ ==================== -->
 
   <!-- 1. Модальное окно: Сетка всех 26 слайдов (Overview) -->
@@ -2205,9 +2742,9 @@
         <div class="deploy-methods-tabs">
           <div class="tab-content active" style="display:block;">
             <p>Ваша ссылка на GitHub Pages:</p>
-            <code class="url-code" style="font-size:1rem; padding:10px 14px;">https://the-real-AI.github.io/is-presentation/</code>
+            <code class="url-code" style="font-size:1rem; padding:10px 14px;">https://the-real-AI.github.io/is-presentation-v2/</code>
             <p style="margin-top:12px; font-size:0.85rem; color:var(--text-muted);">
-              Настройки репозитория: <a href="https://github.com/the-real-AI/is-presentation/settings/pages" target="_blank" style="color:var(--accent-cyan);">github.com/the-real-AI/is-presentation/settings/pages</a>
+              Настройки репозитория: <a href="https://github.com/the-real-AI/is-presentation-v2/settings/pages" target="_blank" style="color:var(--accent-cyan);">github.com/the-real-AI/is-presentation-v2/settings/pages</a>
             </p>
           </div>
         </div>

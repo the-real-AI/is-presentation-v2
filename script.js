@@ -767,11 +767,788 @@ const Presentation = (() => {
     toggleDeployModal,
     openDeployModal: () => toggleDeployModal(true),
     toggleHelpModal,
-    toggleLaserMode
+    toggleLaserMode,
+    getCurrentSlide: () => currentSlide
+  };
+})();
+
+// ============================================================================
+// SINGLE PAGE APPLICATION (SPA) ROUTER & MULTIPLATFORM MANAGER
+// ============================================================================
+const SpaRouter = (() => {
+  let currentView = 'presentation';
+  const views = ['presentation', 'database', 'api-console', 'profile'];
+
+  const navTabs = document.querySelectorAll('.spa-nav-tab');
+  const drawerNavItems = document.querySelectorAll('.drawer-nav-item');
+  const mobileDrawer = document.getElementById('mobile-drawer');
+  const mobileDrawerOverlay = document.getElementById('mobile-drawer-overlay');
+  const topicTitle = document.getElementById('current-slide-topic');
+  const counterWrapper = document.getElementById('slide-counter-wrapper');
+
+  function navigate(viewId) {
+    if (!views.includes(viewId)) viewId = 'presentation';
+    currentView = viewId;
+
+    // Toggle View DOM Containers
+    views.forEach(v => {
+      const el = document.getElementById(`view-${v}`);
+      if (el) {
+        if (v === viewId) {
+          el.style.display = 'block';
+          el.classList.add('active');
+        } else {
+          el.style.display = 'none';
+          el.classList.remove('active');
+        }
+      }
+    });
+
+    // Toggle Navigation Tabs in Header
+    navTabs.forEach(tab => {
+      if (tab.dataset.view === viewId) tab.classList.add('active');
+      else tab.classList.remove('active');
+    });
+
+    // Toggle Navigation Items in Mobile Drawer
+    drawerNavItems.forEach(item => {
+      if (item.dataset.view === viewId) item.classList.add('active');
+      else item.classList.remove('active');
+    });
+
+    // Update Header Topic / Counter Context
+    if (viewId === 'presentation') {
+      if (counterWrapper) counterWrapper.style.display = 'inline-flex';
+      if (topicTitle) {
+        const slide = document.querySelector(`.slide[data-slide="${Presentation.getCurrentSlide()}"]`);
+        topicTitle.textContent = slide ? slide.dataset.topic : 'Титульный лист';
+      }
+    } else {
+      if (counterWrapper) counterWrapper.style.display = 'none';
+      if (topicTitle) {
+        if (viewId === 'database') topicTitle.textContent = 'База данных ИС (SQLite)';
+        else if (viewId === 'api-console') topicTitle.textContent = 'API & X-API-Key Консоль';
+        else if (viewId === 'profile') topicTitle.textContent = 'JWT Аутентификация';
+      }
+    }
+
+    // Scroll to top of view
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Close Mobile Drawer if open
+    closeMobileMenu();
+
+    // Trigger view-specific loads
+    if (viewId === 'database') DatabaseModule.loadSystems();
+    if (viewId === 'api-console') ApiConsoleModule.updateCurlPreview();
+    if (viewId === 'profile') AuthModule.renderProfileView();
+
+    // Update URL Hash without reload
+    window.location.hash = viewId;
+  }
+
+  function openMobileMenu() {
+    if (mobileDrawer) mobileDrawer.classList.add('active');
+    if (mobileDrawerOverlay) mobileDrawerOverlay.classList.add('active');
+  }
+
+  function closeMobileMenu() {
+    if (mobileDrawer) mobileDrawer.classList.remove('active');
+    if (mobileDrawerOverlay) mobileDrawerOverlay.classList.remove('active');
+  }
+
+  function detectDevice() {
+    const el = document.getElementById('mobile-device-meta');
+    if (!el) return;
+    const width = window.innerWidth;
+    let type = 'Десктоп';
+    if (width < 576) type = 'Смартфон';
+    else if (width < 992) type = 'Планшет';
+    else if (width < 1440) type = 'Ноутбук';
+    else type = 'Монитор / Smartboard';
+    el.textContent = `${type} (${width}×${window.innerHeight}px)`;
+  }
+
+  function init() {
+    // Nav Tab clicks
+    navTabs.forEach(tab => {
+      tab.addEventListener('click', () => navigate(tab.dataset.view));
+    });
+
+    // Mobile Hamburger button
+    const btnMobileMenu = document.getElementById('btn-mobile-menu');
+    if (btnMobileMenu) {
+      btnMobileMenu.addEventListener('click', openMobileMenu);
+    }
+
+    // Hash change handler
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.replace('#', '');
+      if (views.includes(hash)) navigate(hash);
+    });
+
+    // Check initial hash
+    const initialHash = window.location.hash.replace('#', '');
+    if (views.includes(initialHash)) {
+      navigate(initialHash);
+    }
+
+    window.addEventListener('resize', detectDevice);
+    detectDevice();
+  }
+
+  return {
+    init,
+    navigate,
+    openMobileMenu,
+    closeMobileMenu,
+    getCurrentView: () => currentView
+  };
+})();
+
+// ============================================================================
+// JWT АУТЕНТИФИКАЦИЯ И МЕНЕДЖЕР ПРОФИЛЯ (RFC 7519)
+// ============================================================================
+const AuthModule = (() => {
+  const STORAGE_TOKEN_KEY = 'is_jwt_token';
+  const STORAGE_KEY_API = 'is_x_api_key';
+  const API_BASE = window.location.origin.includes('http') ? window.location.origin : 'http://localhost:3000';
+
+  let currentToken = localStorage.getItem(STORAGE_TOKEN_KEY) || null;
+  let currentUser = null;
+  let currentApiKey = localStorage.getItem(STORAGE_KEY_API) || 'xak_live_master_9948201';
+
+  // Decode JWT without external libraries
+  function parseJwt(token) {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      const base64Url = parts[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function getRawParts(token) {
+    if (!token) return { header: '', payload: '', sig: '' };
+    const parts = token.split('.');
+    return {
+      header: parts[0] || '',
+      payload: parts[1] || '',
+      sig: parts[2] || ''
+    };
+  }
+
+  // Update header auth button / avatar
+  function updateHeaderWidget() {
+    const container = document.getElementById('user-auth-widget');
+    if (!container) return;
+
+    if (currentToken && currentUser) {
+      container.innerHTML = `
+        <div class="user-chip" onclick="SpaRouter.navigate('profile')" title="Открыть профиль и JWT инспектор">
+          <div class="user-chip-avatar">${currentUser.username.charAt(0).toUpperCase()}</div>
+          <span class="user-chip-name">${currentUser.username}</span>
+          <span class="user-role-tag">${currentUser.role === 'Administrator' ? 'Admin' : 'Arch'}</span>
+        </div>
+      `;
+    } else {
+      container.innerHTML = `
+        <button class="btn-login-header" onclick="SpaRouter.navigate('profile')" title="Войти в систему с получением JWT">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span>Войти (JWT)</span>
+        </button>
+      `;
+    }
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const emailOrUser = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errorEl = document.getElementById('login-error');
+    if (errorEl) errorEl.style.display = 'none';
+
+    try {
+      let data = null;
+      // Try real backend
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emailOrUsername: emailOrUser, password })
+        });
+        data = await res.json();
+      } catch (networkErr) {
+        // Fallback offline simulator
+        data = simulateOfflineLogin(emailOrUser, password);
+      }
+
+      if (data && data.success) {
+        currentToken = data.token;
+        currentUser = data.user;
+        currentApiKey = data.apiKey || 'xak_live_' + Math.random().toString(36).substring(2, 10);
+        localStorage.setItem(STORAGE_TOKEN_KEY, currentToken);
+        localStorage.setItem(STORAGE_KEY_API, currentApiKey);
+
+        updateHeaderWidget();
+        renderProfileView();
+        DatabaseModule.loadSystems();
+      } else {
+        if (errorEl) {
+          errorEl.textContent = (data && data.message) || 'Неверный логин или пароль';
+          errorEl.style.display = 'block';
+        }
+      }
+    } catch (err) {
+      if (errorEl) {
+        errorEl.textContent = 'Ошибка аутентификации: ' + err.message;
+        errorEl.style.display = 'block';
+      }
+    }
+  }
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    const username = document.getElementById('reg-username').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const role = document.getElementById('reg-role').value;
+    const password = document.getElementById('reg-password').value;
+    const errorEl = document.getElementById('reg-error');
+    if (errorEl) errorEl.style.display = 'none';
+
+    try {
+      let data = null;
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, role, password })
+        });
+        data = await res.json();
+      } catch (networkErr) {
+        data = simulateOfflineRegister(username, email, role);
+      }
+
+      if (data && data.success) {
+        currentToken = data.token;
+        currentUser = data.user;
+        currentApiKey = data.apiKey;
+        localStorage.setItem(STORAGE_TOKEN_KEY, currentToken);
+        localStorage.setItem(STORAGE_KEY_API, currentApiKey);
+
+        updateHeaderWidget();
+        renderProfileView();
+        DatabaseModule.loadSystems();
+      } else {
+        if (errorEl) {
+          errorEl.textContent = (data && data.message) || 'Ошибка регистрации';
+          errorEl.style.display = 'block';
+        }
+      }
+    } catch (err) {
+      if (errorEl) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+      }
+    }
+  }
+
+  function logout() {
+    currentToken = null;
+    currentUser = null;
+    localStorage.removeItem(STORAGE_TOKEN_KEY);
+    updateHeaderWidget();
+    renderProfileView();
+  }
+
+  function switchTab(tab) {
+    const btnLogin = document.getElementById('tab-btn-login');
+    const btnReg = document.getElementById('tab-btn-register');
+    const formLogin = document.getElementById('form-login');
+    const formReg = document.getElementById('form-register');
+
+    if (tab === 'login') {
+      if (btnLogin) btnLogin.classList.add('active');
+      if (btnReg) btnReg.classList.remove('active');
+      if (formLogin) formLogin.style.display = 'block';
+      if (formReg) formReg.style.display = 'none';
+    } else {
+      if (btnLogin) btnLogin.classList.remove('active');
+      if (btnReg) btnReg.classList.add('active');
+      if (formLogin) formLogin.style.display = 'none';
+      if (formReg) formReg.style.display = 'block';
+    }
+  }
+
+  function fillDemo(email, pass) {
+    const emailInput = document.getElementById('login-email');
+    const passInput = document.getElementById('login-password');
+    if (emailInput) emailInput.value = email;
+    if (passInput) passInput.value = pass;
+    switchTab('login');
+  }
+
+  function renderProfileView() {
+    const unauthBox = document.getElementById('auth-unauth-container');
+    const authBox = document.getElementById('auth-profile-container');
+
+    if (currentToken && currentUser) {
+      if (unauthBox) unauthBox.style.display = 'none';
+      if (authBox) authBox.style.display = 'block';
+
+      // Fill Profile Info
+      const avatarEl = document.getElementById('prof-avatar');
+      const userEl = document.getElementById('prof-username');
+      const roleEl = document.getElementById('prof-role');
+      const emailEl = document.getElementById('prof-email');
+      const apiKeyEl = document.getElementById('prof-api-key');
+
+      if (avatarEl) avatarEl.textContent = currentUser.username.charAt(0).toUpperCase();
+      if (userEl) userEl.textContent = currentUser.username;
+      if (roleEl) roleEl.textContent = currentUser.role;
+      if (emailEl) emailEl.textContent = currentUser.email;
+      if (apiKeyEl) apiKeyEl.value = currentApiKey;
+
+      // Fill JWT Inspector
+      const parts = getRawParts(currentToken);
+      const rawHeaderEl = document.getElementById('jwt-raw-header');
+      const rawPayloadEl = document.getElementById('jwt-raw-payload');
+      const rawSigEl = document.getElementById('jwt-raw-sig');
+      const payloadViewEl = document.getElementById('jwt-payload-view');
+
+      if (rawHeaderEl) rawHeaderEl.textContent = parts.header.substring(0, 18) + '...';
+      if (rawPayloadEl) rawPayloadEl.textContent = parts.payload.substring(0, 18) + '...';
+      if (rawSigEl) rawSigEl.textContent = parts.sig.substring(0, 14) + '...';
+
+      const decoded = parseJwt(currentToken);
+      if (payloadViewEl && decoded) {
+        payloadViewEl.textContent = JSON.stringify(decoded, null, 2);
+      }
+    } else {
+      if (unauthBox) unauthBox.style.display = 'block';
+      if (authBox) authBox.style.display = 'none';
+    }
+  }
+
+  async function generateNewApiKey() {
+    if (!currentToken) return;
+    try {
+      let newKey = 'xak_live_' + Math.random().toString(36).substring(2, 10);
+      try {
+        const res = await fetch(`${API_BASE}/api/keys/generate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentToken}`
+          },
+          body: JSON.stringify({ name: `Key (${new Date().toLocaleTimeString()})` })
+        });
+        const data = await res.json();
+        if (data.key) newKey = data.key;
+      } catch (e) {}
+
+      currentApiKey = newKey;
+      localStorage.setItem(STORAGE_KEY_API, currentApiKey);
+      const apiKeyEl = document.getElementById('prof-api-key');
+      if (apiKeyEl) apiKeyEl.value = currentApiKey;
+      alert(`Сгенерирован новый X-API-Key: ${currentApiKey}`);
+    } catch (e) {
+      alert('Ошибка при генерации ключа: ' + e.message);
+    }
+  }
+
+  function copyApiKey() {
+    const input = document.getElementById('prof-api-key');
+    if (!input) return;
+    navigator.clipboard.writeText(input.value).then(() => {
+      alert('X-API-Key скопирован в буфер обмена!');
+    });
+  }
+
+  // Client-side offline fallback simulation
+  function simulateOfflineLogin(login, pass) {
+    if ((login === 'admin@system.local' || login === 'admin') && pass === 'admin123') {
+      const user = { id: 'usr_admin_001', username: 'admin', email: 'admin@system.local', role: 'Administrator' };
+      return { success: true, token: createFakeJwt(user), user, apiKey: 'xak_live_master_9948201' };
+    }
+    if ((login === 'architect@system.local' || login === 'architect') && pass === 'pass123') {
+      const user = { id: 'usr_arch_002', username: 'architect', email: 'architect@system.local', role: 'Solution Architect' };
+      return { success: true, token: createFakeJwt(user), user, apiKey: 'xak_live_dev_7731902' };
+    }
+    return { success: false, message: 'Неверные данные. Доступны демо-аккаунты: admin / admin123' };
+  }
+
+  function simulateOfflineRegister(username, email, role) {
+    const user = { id: 'usr_' + Math.random().toString(36).substring(2, 8), username, email, role };
+    return { success: true, token: createFakeJwt(user), user, apiKey: 'xak_live_' + Math.random().toString(36).substring(2, 10) };
+  }
+
+  function createFakeJwt(payload) {
+    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).replace(/=/g, '');
+    const now = Math.floor(Date.now() / 1000);
+    const body = btoa(JSON.stringify({ ...payload, iat: now, exp: now + 86400 })).replace(/=/g, '');
+    const sig = btoa('mock_signature_hs256_valid').replace(/=/g, '');
+    return `${header}.${body}.${sig}`;
+  }
+
+  function init() {
+    if (currentToken) {
+      currentUser = parseJwt(currentToken);
+      if (!currentUser) {
+        currentToken = null;
+        localStorage.removeItem(STORAGE_TOKEN_KEY);
+      }
+    } else {
+      // Auto-login admin for instant rich showcase
+      const demo = simulateOfflineLogin('admin@system.local', 'admin123');
+      currentToken = demo.token;
+      currentUser = demo.user;
+      currentApiKey = demo.apiKey;
+      localStorage.setItem(STORAGE_TOKEN_KEY, currentToken);
+      localStorage.setItem(STORAGE_KEY_API, currentApiKey);
+    }
+
+    updateHeaderWidget();
+    renderProfileView();
+  }
+
+  return {
+    init,
+    handleLogin,
+    handleRegister,
+    logout,
+    switchTab,
+    fillDemo,
+    renderProfileView,
+    generateNewApiKey,
+    copyApiKey,
+    getToken: () => currentToken,
+    getCurrentApiKey: () => currentApiKey,
+    getCurrentUser: () => currentUser
+  };
+})();
+
+// ============================================================================
+// БАЗА ДАННЫХ ИС: УПРАВЛЕНИЕ ЗАПИСЯМИ И SQLITE СИНХРОНИЗАЦИЯ
+// ============================================================================
+const DatabaseModule = (() => {
+  const API_BASE = window.location.origin.includes('http') ? window.location.origin : 'http://localhost:3000';
+  let systemsData = [];
+
+  const defaultSystems = [
+    { id: 'sys_01', code: 'IS-CORE-BILLING', title: 'Ядро биллинговой системы', architecture_type: 'Microservices', sla_level: '99.99%', status: 'Active', database_tech: 'PostgreSQL + Redis' },
+    { id: 'sys_02', code: 'IS-ECOMMERCE-GW', title: 'API Gateway E-Commerce', architecture_type: 'API Gateway', sla_level: '99.95%', status: 'Active', database_tech: 'Redis Cluster' },
+    { id: 'sys_03', code: 'IS-INVENTORY-SRV', title: 'Управление складскими остатками', architecture_type: 'Modular Monolith', sla_level: '99.9%', status: 'Active', database_tech: 'PostgreSQL' },
+    { id: 'sys_04', code: 'IS-ANALYTICS-DWH', title: 'Корпоративное хранилище данных', architecture_type: 'Lambda', sla_level: '99.5%', status: 'Active', database_tech: 'ClickHouse + MinIO' },
+    { id: 'sys_05', code: 'IS-CRM-CUSTOMER', title: 'Управление отношениями с клиентами', architecture_type: 'Microservices', sla_level: '99.9%', status: 'Draft', database_tech: 'MongoDB + Elastic' }
+  ];
+
+  async function loadSystems(showToast = false) {
+    const key = AuthModule.getCurrentApiKey();
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/systems`, {
+        headers: { 'X-API-Key': key }
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        systemsData = json.data || [];
+        if (showToast) alert(`Успешно загружено ${systemsData.length} систем из SQLite базы данных!`);
+      } else {
+        // Fallback local cache
+        if (systemsData.length === 0) systemsData = [...defaultSystems];
+      }
+    } catch (err) {
+      if (systemsData.length === 0) systemsData = [...defaultSystems];
+      if (showToast) alert(`Режим автономной работы: загружено ${systemsData.length} записей из локального кэша.`);
+    }
+
+    renderTable(systemsData);
+    updateMetrics();
+  }
+
+  function renderTable(list) {
+    const tbody = document.getElementById('systems-tbody');
+    const emptyState = document.getElementById('db-empty-state');
+    if (!tbody) return;
+
+    if (!list || list.length === 0) {
+      tbody.innerHTML = '';
+      if (emptyState) emptyState.style.display = 'block';
+      return;
+    }
+
+    if (emptyState) emptyState.style.display = 'none';
+    tbody.innerHTML = list.map(item => `
+      <tr>
+        <td><span class="sys-code-badge">${item.code}</span></td>
+        <td><strong>${item.title}</strong></td>
+        <td><i class="fa-solid fa-layer-group text-cyan"></i> ${item.architecture_type}</td>
+        <td><span class="text-green font-mono"><strong>${item.sla_level}</strong></span></td>
+        <td><small class="font-mono">${item.database_tech || 'SQL'}</small></td>
+        <td>
+          <span class="status-chip ${item.status === 'Active' ? 'active' : 'draft'}">
+            <i class="fa-solid fa-circle text-xs"></i> ${item.status}
+          </span>
+        </td>
+        <td>
+          <button class="btn-copy" onclick="DatabaseModule.deleteSystem('${item.id}')" title="Удалить запись">
+            <i class="fa-solid fa-trash text-red"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function filterSystems() {
+    const search = (document.getElementById('db-search-input')?.value || '').toLowerCase();
+    const arch = document.getElementById('db-filter-arch')?.value || '';
+
+    const filtered = systemsData.filter(s => {
+      const matchesSearch = s.code.toLowerCase().includes(search) ||
+                            s.title.toLowerCase().includes(search) ||
+                            (s.database_tech && s.database_tech.toLowerCase().includes(search));
+      const matchesArch = !arch || s.architecture_type.includes(arch);
+      return matchesSearch && matchesArch;
+    });
+
+    renderTable(filtered);
+  }
+
+  function updateMetrics() {
+    const totalEl = document.getElementById('db-stat-total');
+    const microEl = document.getElementById('db-stat-micro');
+    if (totalEl) totalEl.textContent = systemsData.length;
+    if (microEl) microEl.textContent = systemsData.filter(s => s.architecture_type.includes('Microservices')).length;
+  }
+
+  function openAddModal() {
+    const modal = document.getElementById('modal-add-system');
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeAddModal() {
+    const modal = document.getElementById('modal-add-system');
+    if (modal) modal.classList.remove('active');
+  }
+
+  async function handleAddSubmit(e) {
+    e.preventDefault();
+    const code = document.getElementById('sys-code').value.trim();
+    const title = document.getElementById('sys-title').value.trim();
+    const arch = document.getElementById('sys-arch').value;
+    const sla = document.getElementById('sys-sla').value;
+    const db = document.getElementById('sys-db').value.trim();
+    const desc = document.getElementById('sys-desc').value.trim();
+
+    const newSystem = {
+      id: 'sys_' + Math.random().toString(36).substring(2, 7),
+      code: code.toUpperCase(),
+      title,
+      architecture_type: arch,
+      sla_level: sla,
+      status: 'Active',
+      database_tech: db,
+      description: desc
+    };
+
+    try {
+      const key = AuthModule.getCurrentApiKey();
+      await fetch(`${API_BASE}/api/v1/systems`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': key
+        },
+        body: JSON.stringify(newSystem)
+      });
+    } catch (e) {}
+
+    systemsData.unshift(newSystem);
+    renderTable(systemsData);
+    updateMetrics();
+    closeAddModal();
+    alert(`Система «${title}» успешно добавлена в базу данных!`);
+  }
+
+  async function deleteSystem(id) {
+    if (!confirm('Вы уверены, что хотите удалить эту систему из базы данных?')) return;
+    try {
+      const key = AuthModule.getCurrentApiKey();
+      await fetch(`${API_BASE}/api/v1/systems/${id}`, {
+        method: 'DELETE',
+        headers: { 'X-API-Key': key }
+      });
+    } catch (e) {}
+
+    systemsData = systemsData.filter(s => s.id !== id);
+    renderTable(systemsData);
+    updateMetrics();
+  }
+
+  return {
+    loadSystems,
+    filterSystems,
+    openAddModal,
+    closeAddModal,
+    handleAddSubmit,
+    deleteSystem
+  };
+})();
+
+// ============================================================================
+// API EXPLORER & X-API-KEY CONSOLE MODULE (SWAGGER-LIKE TESTER)
+// ============================================================================
+const ApiConsoleModule = (() => {
+  const API_BASE = window.location.origin.includes('http') ? window.location.origin : 'http://localhost:3000';
+
+  function onMethodChange() {
+    const method = document.getElementById('api-method').value;
+    const bodyGroup = document.getElementById('api-body-group');
+    if (bodyGroup) {
+      bodyGroup.style.display = method === 'POST' ? 'block' : 'none';
+    }
+    updateCurlPreview();
+  }
+
+  function onEndpointChange() {
+    updateCurlPreview();
+  }
+
+  function useMyKey() {
+    const input = document.getElementById('api-key-input');
+    if (input) {
+      input.value = AuthModule.getCurrentApiKey();
+      updateCurlPreview();
+    }
+  }
+
+  function clearKey() {
+    const input = document.getElementById('api-key-input');
+    if (input) {
+      input.value = '';
+      updateCurlPreview();
+    }
+  }
+
+  function updateCurlPreview() {
+    const curlEl = document.getElementById('curl-preview');
+    if (!curlEl) return;
+    const key = document.getElementById('api-key-input')?.value || '';
+    const method = document.getElementById('api-method')?.value || 'GET';
+    const endpoint = document.getElementById('api-endpoint')?.value || '/api/v1/systems';
+
+    let cmd = `curl -X ${method} "${API_BASE}${endpoint}"`;
+    if (key) cmd += ` \\\n  -H "X-API-Key: ${key}"`;
+    if (method === 'POST') cmd += ` \\\n  -H "Content-Type: application/json" -d '{"code":"IS-TEST"}'`;
+
+    curlEl.textContent = cmd;
+  }
+
+  async function sendRequest() {
+    const key = (document.getElementById('api-key-input')?.value || '').trim();
+    const method = document.getElementById('api-method')?.value || 'GET';
+    const endpoint = document.getElementById('api-endpoint')?.value || '/api/v1/systems';
+    const bodyStr = document.getElementById('api-body-input')?.value || '{}';
+
+    const statusBadge = document.getElementById('response-status-badge');
+    const responseMeta = document.getElementById('response-meta');
+    const resTimeEl = document.getElementById('res-time');
+    const jsonOutput = document.getElementById('json-response');
+
+    if (jsonOutput) jsonOutput.textContent = '// Выполняю запрос к API...';
+
+    const t0 = performance.now();
+    let status = 0;
+    let resultJson = null;
+
+    try {
+      const headers = {};
+      if (key) headers['X-API-Key'] = key;
+      if (method === 'POST') headers['Content-Type'] = 'application/json';
+
+      const options = { method, headers };
+      if (method === 'POST') options.body = bodyStr;
+
+      const res = await fetch(`${API_BASE}${endpoint}`, options);
+      status = res.status;
+      resultJson = await res.json();
+    } catch (networkError) {
+      // Offline fallback: simulate 401 on missing key, 200 on valid key
+      if (!key) {
+        status = 401;
+        resultJson = {
+          success: false,
+          error: "Unauthorized: Invalid or missing X-API-Key",
+          message: "Доступ запрещён! Требуется действующий заголовок X-API-Key.",
+          hint: "Передайте валидный ключ в заголовке 'X-API-Key: xak_live_master_9948201' или войдите в систему и скопируйте свой ключ."
+        };
+      } else {
+        status = 200;
+        resultJson = {
+          success: true,
+          source: "Offline DB Engine (Mock / Cached)",
+          authenticated_key: key,
+          endpoint: endpoint,
+          data: [
+            { id: "sys_01", code: "IS-CORE-BILLING", title: "Ядро биллинговой системы", sla_level: "99.99%" },
+            { id: "sys_02", code: "IS-ECOMMERCE-GW", title: "API Gateway E-Commerce", sla_level: "99.95%" }
+          ]
+        };
+      }
+    }
+
+    const t1 = performance.now();
+    const latency = Math.round(t1 - t0);
+
+    // Update Status Badge
+    if (statusBadge) {
+      statusBadge.className = 'response-status-badge';
+      if (status >= 200 && status < 300) statusBadge.classList.add('status-200');
+      else if (status === 401 || status === 403) statusBadge.classList.add('status-401');
+
+      statusBadge.innerHTML = `
+        <span class="status-code">HTTP ${status}</span>
+        <span class="status-text">${status === 200 ? 'OK' : status === 401 ? 'Unauthorized (Требуется X-API-Key)' : 'Error'}</span>
+      `;
+    }
+
+    if (responseMeta) responseMeta.style.display = 'flex';
+    if (resTimeEl) resTimeEl.textContent = `${latency} ms`;
+
+    if (jsonOutput) {
+      jsonOutput.textContent = JSON.stringify(resultJson, null, 2);
+    }
+  }
+
+  function copyCurl() {
+    const code = document.getElementById('curl-preview')?.textContent || '';
+    navigator.clipboard.writeText(code).then(() => {
+      alert('cURL команда скопирована в буфер обмена!');
+    });
+  }
+
+  return {
+    onMethodChange,
+    onEndpointChange,
+    useMyKey,
+    clearKey,
+    updateCurlPreview,
+    sendRequest,
+    copyCurl
   };
 })();
 
 // Boot on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
   Presentation.init();
+  SpaRouter.init();
+  AuthModule.init();
+  DatabaseModule.loadSystems();
 });
