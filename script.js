@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ПРОЕКТИРОВАНИЕ ИНФОРМАЦИОННЫХ СИСТЕМ
  * Презентационный движок, оптимизированный для сенсорных интерактивных досок (Smartboard)
  * Поддержка: мультитач, свайпы, лазерная указка/маркер, мгновенный отклик на касания
@@ -732,6 +732,41 @@ const Presentation = (() => {
 
     const btnDeploy = document.getElementById('btn-deploy');
     if (btnDeploy) btnDeploy.addEventListener('pointerdown', () => toggleDeployModal());
+    // Mobile Tools Dropdown Menu (одна кнопка в углу для телефонов)
+    const btnMobileTools = document.getElementById('btn-mobile-tools');
+    const mobileToolsMenu = document.getElementById('mobile-tools-menu');
+
+    if (btnMobileTools && mobileToolsMenu) {
+      btnMobileTools.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        mobileToolsMenu.classList.toggle('active');
+        playTone(550, 'sine', 0.05, 0.03);
+      });
+
+      document.addEventListener('pointerdown', (e) => {
+        if (!mobileToolsMenu.contains(e.target) && e.target !== btnMobileTools) {
+          mobileToolsMenu.classList.remove('active');
+        }
+      });
+
+      const bindToolItem = (id, action) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('pointerdown', () => {
+            mobileToolsMenu.classList.remove('active');
+            action();
+          });
+        }
+      };
+
+      bindToolItem('mb-btn-laser', toggleLaserMode);
+      bindToolItem('mb-btn-sound', toggleSound);
+      bindToolItem('mb-btn-overview', () => toggleOverviewModal());
+      bindToolItem('mb-btn-video', () => toggleVideoModal());
+      bindToolItem('mb-btn-help', () => toggleHelpModal());
+      bindToolItem('mb-btn-fullscreen', toggleFullscreen);
+      bindToolItem('mb-btn-deploy', () => toggleDeployModal());
+    }
 
     // Close modals on touch outside
     [modalOverview, modalVideo, modalDeploy, modalHelp].forEach(m => {

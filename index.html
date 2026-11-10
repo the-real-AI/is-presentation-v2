@@ -85,30 +85,68 @@
         <span id="presentation-timer">00:00</span>
       </div>
 
-      <!-- Control Buttons -->
-      <button class="nav-btn" id="btn-laser" title="Интерактивная лазерная указка / маркер (Для сенсорной доски)">
-        <i class="fa-solid fa-wand-magic-sparkles"></i>
-      </button>
-      <button class="nav-btn" id="btn-sound" title="Вкл/Выкл звук эффектов">
-        <i class="fa-solid fa-volume-high"></i>
-      </button>
-      <button class="nav-btn" id="btn-overview" title="План и все 26 слайдов (Сетка)">
-        <i class="fa-solid fa-table-cells"></i>
-      </button>
-      <button class="nav-btn" id="btn-video" title="Мультимедиа & Видео материалы">
-        <i class="fa-solid fa-video"></i>
-      </button>
-      <button class="nav-btn" id="btn-help" title="Горячие клавиши (?)">
-        <i class="fa-solid fa-keyboard"></i>
-      </button>
-      <button class="nav-btn" id="btn-fullscreen" title="Полноэкранный режим (F)">
-        <i class="fa-solid fa-expand"></i>
-      </button>
-      <button class="nav-btn deploy-pill-btn" id="btn-deploy" title="Инструкция по бесплатному открытию в облаке">
-        <i class="fa-solid fa-cloud-arrow-up"></i>
-        <span>В облако</span>
-      </button>
-    </div>
+      <!-- Desktop Control Buttons Group -->
+      <div class="desktop-controls-group">
+        <button class="nav-btn" id="btn-laser" title="Интерактивная лазерная указка / маркер (Для сенсорной доски)">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </button>
+        <button class="nav-btn" id="btn-sound" title="Вкл/Выкл звук эффектов">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+        <button class="nav-btn" id="btn-overview" title="План и все 26 слайдов (Сетка)">
+          <i class="fa-solid fa-table-cells"></i>
+        </button>
+        <button class="nav-btn" id="btn-video" title="Мультимедиа & Видео материалы">
+          <i class="fa-solid fa-video"></i>
+        </button>
+        <button class="nav-btn" id="btn-help" title="Горячие клавиши (?)">
+          <i class="fa-solid fa-keyboard"></i>
+        </button>
+        <button class="nav-btn" id="btn-fullscreen" title="Полноэкранный режим (F)">
+          <i class="fa-solid fa-expand"></i>
+        </button>
+        <button class="nav-btn deploy-pill-btn" id="btn-deploy" title="Инструкция по бесплатному открытию в облаке">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <span>В облако</span>
+        </button>
+      </div>
+
+      <!-- Mobile Tools Dropdown Menu (Одна кнопка в углу для смартфонов) -->
+      <div class="mobile-tools-dropdown-wrapper" id="mobile-tools-wrapper">
+        <button class="nav-btn tools-dropdown-btn" id="btn-mobile-tools" title="Все инструменты" aria-label="Открыть инструменты">
+          <i class="fa-solid fa-ellipsis-vertical"></i>
+        </button>
+        <div class="mobile-tools-menu" id="mobile-tools-menu">
+          <button class="tools-menu-item" id="mb-btn-laser">
+            <i class="fa-solid fa-wand-magic-sparkles text-cyan"></i>
+            <span>Лазерная указка</span>
+          </button>
+          <button class="tools-menu-item" id="mb-btn-sound">
+            <i class="fa-solid fa-volume-high text-green"></i>
+            <span>Звуковые эффекты</span>
+          </button>
+          <button class="tools-menu-item" id="mb-btn-overview">
+            <i class="fa-solid fa-table-cells text-accent"></i>
+            <span>Все 26 слайдов (Сетка)</span>
+          </button>
+          <button class="tools-menu-item" id="mb-btn-video">
+            <i class="fa-solid fa-video text-purple"></i>
+            <span>Видеоматериалы</span>
+          </button>
+          <button class="tools-menu-item" id="mb-btn-help">
+            <i class="fa-solid fa-keyboard text-amber"></i>
+            <span>Горячие клавиши</span>
+          </button>
+          <button class="tools-menu-item" id="mb-btn-fullscreen">
+            <i class="fa-solid fa-expand text-blue"></i>
+            <span>На весь экран</span>
+          </button>
+          <button class="tools-menu-item" id="mb-btn-deploy">
+            <i class="fa-solid fa-cloud-arrow-up text-cyan"></i>
+            <span>Инструкция по облаку</span>
+          </button>
+        </div>
+      </div>
   </header>
 
   <!-- Progress Bar (Always visible at top) -->

@@ -4544,3 +4544,209 @@ body {
     font-size: 0.75rem !important;
   }
 }
+
+
+/* ==========================================================================
+   КОМПАКТНАЯ ШАПКА ДЛЯ ТЕЛЕФОНОВ: ВСЕ КНОПКИ В ОДНУ КНОПКУ В УГЛУ ЭКРАНА
+   ========================================================================== */
+
+/* На десктопе кнопка мобильного меню скрыта, а группа кнопок видна */
+.desktop-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-tools-dropdown-wrapper {
+  display: none;
+  position: relative;
+}
+
+/* На мобильных устройствах и планшетах (<= 992px) */
+@media (max-width: 992px) {
+  .desktop-controls-group {
+    display: none !important; /* Убираем все 7 кнопок из строки шапки */
+  }
+
+  .mobile-tools-dropdown-wrapper {
+    display: block !important; /* Показываем одну кнопку меню в углу */
+  }
+
+  /* Сама плашка шапки гарантированно укладывается в ширину экрана */
+  .top-nav {
+    width: 100vw !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: visible !important; /* для выпадающего меню */
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 6px 10px !important;
+    height: 56px !important;
+    gap: 6px !important;
+  }
+
+  .nav-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .mobile-menu-toggle {
+    display: inline-flex !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1rem !important;
+  }
+
+  .logo-pill {
+    padding: 4px 8px !important;
+  }
+
+  .logo-text {
+    font-size: 0.76rem !important;
+    letter-spacing: 0.02em !important;
+  }
+
+  .spa-nav-tabs {
+    display: none !important;
+  }
+
+  #current-slide-topic {
+    display: none !important;
+  }
+
+  .nav-center {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .slide-counter-wrapper {
+    padding: 4px 8px !important;
+    font-size: 0.78rem !important;
+    white-space: nowrap !important;
+  }
+
+  .nav-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .timer-badge {
+    display: none !important;
+  }
+
+  .user-auth-widget {
+    display: flex !important;
+  }
+
+  .user-chip {
+    padding: 3px 6px !important;
+    font-size: 0.75rem !important;
+    gap: 5px !important;
+  }
+
+  .user-chip-avatar {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .user-chip-name {
+    display: inline-block !important;
+    max-width: 50px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .user-role-tag {
+    display: none !important;
+  }
+
+  /* Стиль кнопки с тремя точками в углу */
+  .tools-dropdown-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #fff !important;
+    font-size: 1.15rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+  }
+
+  .tools-dropdown-btn:active {
+    background: rgba(0, 242, 254, 0.25) !important;
+    border-color: rgba(0, 242, 254, 0.5) !important;
+    transform: scale(0.95);
+  }
+
+  /* Всплывающее меню инструментов */
+  .mobile-tools-menu {
+    position: absolute !important;
+    top: calc(100% + 10px) !important;
+    right: 0 !important;
+    width: 240px !important;
+    background: rgba(10, 15, 26, 0.98) !important;
+    backdrop-filter: blur(28px) !important;
+    -webkit-backdrop-filter: blur(28px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8) !important;
+    border-radius: 14px !important;
+    padding: 8px !important;
+    display: none !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    z-index: 100000 !important;
+  }
+
+  .mobile-tools-menu.active {
+    display: flex !important;
+    animation: pop-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  }
+
+  .tools-menu-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 10px 12px !important;
+    background: transparent !important;
+    border: none !important;
+    color: #f1f5f9 !important;
+    font-size: 0.86rem !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    text-align: left !important;
+    cursor: pointer !important;
+    width: 100% !important;
+    transition: background 0.15s ease !important;
+  }
+
+  .tools-menu-item:active {
+    background: rgba(255, 255, 255, 0.12) !important;
+  }
+
+  .tools-menu-item i {
+    font-size: 1rem !important;
+    width: 22px !important;
+    text-align: center !important;
+  }
+}
