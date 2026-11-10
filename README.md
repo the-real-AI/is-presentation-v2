@@ -24,7 +24,7 @@
 
 #### 2. 🔐 JWT Аутентификация (RFC 7519) & Google Firebase
 - Подлинные JWT токены, выпускаемые Google Firebase Identity Toolkit.
-- Инспектор токена прямо в интерфейсе: разделение на Header (алгоритм RS256/HS256), Payload (claims `sub`, `iss: https://securetoken.google.com/presentation-3ecc0`, `email`, `role`, `exp`) и Signature.
+- Инспектор токена прямо в интерфейсе: разделение на Header (алгоритм RS256/HS256), Payload (claims `sub`, `iss: https://securetoken.google.com/<project_id>`, `email`, `role`, `exp`) и Signature.
 - Быстрый демо-вход в 1 клик:
   - 👑 **Administrator**: `admin@system.local` / `admin123` (мастер-ключ `xak_live_master_9948201`)
   - 🛠️ **Solution Architect**: `architect@system.local` / `pass123` (ключ `xak_live_arch_7731902`)
@@ -87,10 +87,10 @@ git push origin main
 4. Параметры сборки подставятся автоматически из `netlify.toml`:
    - **Publish directory**: `.` (корень)
    - **Functions directory**: `netlify/functions`
-5. В разделе **Site configuration** → **Environment variables** добавьте переменные из файла `.env`:
-   - `FIREBASE_PROJECT_ID`: `presentation-3ecc0`
-   - `FIREBASE_WEB_API_KEY`: `AIzaSyAHxcTYxlb0Qllin9VbFHJM0EqE_XEAyMQ`
-   - `JWT_SECRET`: `is-presentation-super-secret-jwt-key-2026`
+5. В разделе **Site configuration** → **Environment variables** добавьте переменные:
+   - `FIREBASE_PROJECT_ID`: ID вашего проекта в Firebase
+   - `FIREBASE_WEB_API_KEY`: Web API Key из настроек Firebase Console
+   - `JWT_SECRET`: секретная строка для подписи токенов
 6. Нажмите **Deploy site**. Ваш проект будет опубликован за несколько секунд!
 
 ---

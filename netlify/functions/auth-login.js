@@ -6,6 +6,7 @@
 
 const {
   FIREBASE_API_KEY,
+  FIREBASE_PROJECT_ID,
   jsonResponse,
   CORS_HEADERS
 } = require('./common');
@@ -14,9 +15,10 @@ const {
 function makeDemoJwt(user) {
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
   const now = Math.floor(Date.now() / 1000);
+  const proj = FIREBASE_PROJECT_ID || 'presentation-cloud';
   const payload = Buffer.from(JSON.stringify({
-    iss: 'https://securetoken.google.com/presentation-3ecc0',
-    aud: 'presentation-3ecc0',
+    iss: `https://securetoken.google.com/${proj}`,
+    aud: proj,
     auth_time: now,
     user_id: user.id,
     sub: user.id,

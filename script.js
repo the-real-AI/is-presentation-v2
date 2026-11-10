@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ПРОЕКТИРОВАНИЕ ИНФОРМАЦИОННЫХ СИСТЕМ
  * Презентационный движок, оптимизированный для сенсорных интерактивных досок (Smartboard)
  * Поддержка: мультитач, свайпы, лазерная указка/маркер, мгновенный отклик на касания
@@ -907,13 +907,13 @@ const SpaRouter = (() => {
 })();
 
 // ============================================================================
-// GOOGLE FIREBASE CONFIGURATION & INITIALIZATION
+// GOOGLE FIREBASE CONFIGURATION & INITIALIZATION (SECURE RUNTIME INJECTION)
 // ============================================================================
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyAHxcTYxlb0Qllin9VbFHJM0EqE_XEAyMQ",
-  authDomain: "presentation-3ecc0.firebaseapp.com",
-  projectId: "presentation-3ecc0",
-  storageBucket: "presentation-3ecc0.firebasestorage.app",
+let FIREBASE_CONFIG = {
+  apiKey: localStorage.getItem('fb_client_api_key') || "",
+  authDomain: localStorage.getItem('fb_client_auth_domain') || "",
+  projectId: localStorage.getItem('fb_client_project_id') || "",
+  storageBucket: "",
   messagingSenderId: "1049003748352",
   appId: "1:1049003748352:web:298544740ecb6dcffa3ce5",
   measurementId: "G-B57J3DP04C"
@@ -923,8 +923,21 @@ let firebaseApp = null;
 let firebaseAuth = null;
 let firebaseDb = null;
 
-function initFirebase() {
-  if (typeof firebase !== 'undefined') {
+async function initFirebase() {
+  // 1. Безопасное получение публичной конфигурации из Netlify Function
+  try {
+    const res = await fetch('/api/config');
+    if (res.ok) {
+      const cfg = await res.json();
+      if (cfg && cfg.apiKey) {
+        FIREBASE_CONFIG = Object.assign(FIREBASE_CONFIG, cfg);
+        localStorage.setItem('fb_client_api_key', cfg.apiKey);
+        localStorage.setItem('fb_client_project_id', cfg.projectId);
+      }
+    }
+  } catch (netErr) {}
+
+  if (typeof firebase !== 'undefined' && FIREBASE_CONFIG.apiKey) {
     try {
       if (!firebase.apps.length) {
         firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);

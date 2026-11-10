@@ -9,6 +9,12 @@
   node_bundler = "esbuild"
   included_files = ["netlify/functions/**"]
 
+# ─── Config route ────────────────────────────────────────────────────────────
+[[redirects]]
+  from    = "/api/config"
+  to      = "/.netlify/functions/config"
+  status  = 200
+
 # ─── Auth routes ─────────────────────────────────────────────────────────────
 [[redirects]]
   from    = "/api/auth/register"

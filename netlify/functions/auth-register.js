@@ -6,6 +6,7 @@
 
 const {
   FIREBASE_API_KEY,
+  FIREBASE_PROJECT_ID,
   jsonResponse,
   CORS_HEADERS
 } = require('./common');
@@ -90,8 +91,9 @@ exports.handler = async (event) => {
     const fakeId = 'usr_' + Math.random().toString(36).substring(2, 9);
     const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
     const now = Math.floor(Date.now() / 1000);
+    const proj = FIREBASE_PROJECT_ID || 'presentation-cloud';
     const payload = Buffer.from(JSON.stringify({
-      iss: 'https://securetoken.google.com/presentation-3ecc0',
+      iss: `https://securetoken.google.com/${proj}`,
       sub: fakeId,
       email,
       role,
