@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ПРОЕКТИРОВАНИЕ ИНФОРМАЦИОННЫХ СИСТЕМ
  * Презентационный движок, оптимизированный для сенсорных интерактивных досок (Smartboard)
  * Поддержка: мультитач, свайпы, лазерная указка/маркер, мгновенный отклик на касания
@@ -803,7 +803,77 @@ const Presentation = (() => {
     openDeployModal: () => toggleDeployModal(true),
     toggleHelpModal,
     toggleLaserMode,
-    getCurrentSlide: () => currentSlide
+    getCurrentSlide: () => currentSlide,
+    reinit(newTotal) {
+      currentSlide = 1;
+
+      // Обновляем NodeList слайдов
+      const allSlides = document.querySelectorAll('.slide');
+
+      // Обновляем counter-total
+      document.querySelectorAll('.counter-total').forEach(el => {
+        el.textContent = String(newTotal).padStart(2, '0');
+      });
+
+      // Показываем первый слайд, скрываем остальные
+      allSlides.forEach((s, i) => {
+        s.classList.remove('active', 'slide-prev');
+        if (i === 0) s.classList.add('active');
+      });
+
+      // Обновляем progress bar
+      if (progressBarFill) {
+        const pct = newTotal > 0 ? (1 / newTotal) * 100 : 0;
+        progressBarFill.style.width = `${pct}%`;
+      }
+
+      // Обновляем topic title
+      if (allSlides[0] && topicTitle) {
+        topicTitle.textContent = allSlides[0].dataset.topic || '';
+      }
+
+      // Обновляем counter current
+      if (counterCurrent) {
+        counterCurrent.textContent = '01';
+      }
+
+      // Обновляем dock dots
+      if (dockDotsContainer) {
+        dockDotsContainer.innerHTML = '';
+        for (let i = 1; i <= newTotal; i++) {
+          const dot = document.createElement('button');
+          dot.className = `dock-dot${i === 1 ? ' active' : ''}`;
+          dot.setAttribute('data-target-slide', i);
+          dot.setAttribute('title', `Слайд ${i}`);
+          dot.textContent = i;
+          dot.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            goToSlide(i);
+          });
+          dockDotsContainer.appendChild(dot);
+        }
+      }
+
+      // Обновляем thumbnail grid в overview
+      if (thumbnailGrid) {
+        thumbnailGrid.innerHTML = '';
+        allSlides.forEach((slide) => {
+          const num = parseInt(slide.getAttribute('data-slide'), 10);
+          const topic = slide.getAttribute('data-topic') || `Слайд ${num}`;
+          const card = document.createElement('div');
+          card.className = `thumb-card${num === 1 ? ' active' : ''}`;
+          card.innerHTML = `
+            <div class="thumb-num">СЛАЙД ${String(num).padStart(2, '0')}</div>
+            <div class="thumb-title">${topic}</div>
+          `;
+          card.addEventListener('pointerdown', () => {
+            goToSlide(num);
+            toggleOverviewModal(false);
+          });
+          thumbnailGrid.appendChild(card);
+        });
+      }
+    }
   };
 })();
 
@@ -812,7 +882,7 @@ const Presentation = (() => {
 // ============================================================================
 const SpaRouter = (() => {
   let currentView = 'presentation';
-  const views = ['presentation', 'database', 'api-console', 'profile'];
+  const views = ['presentation', 'database', 'api-console', 'profile', 'upload'];
 
   const navTabs = document.querySelectorAll('.spa-nav-tab');
   const drawerNavItems = document.querySelectorAll('.drawer-nav-item');
@@ -864,6 +934,7 @@ const SpaRouter = (() => {
         if (viewId === 'database') topicTitle.textContent = 'База данных ИС (SQLite)';
         else if (viewId === 'api-console') topicTitle.textContent = 'API & X-API-Key Консоль';
         else if (viewId === 'profile') topicTitle.textContent = 'JWT Аутентификация';
+        else if (viewId === 'upload') topicTitle.textContent = 'Загрузка презентации (AI)';
       }
     }
 
@@ -1710,4 +1781,5 @@ document.addEventListener('DOMContentLoaded', () => {
   SpaRouter.init();
   AuthModule.init();
   DatabaseModule.loadSystems();
+  UploadModule.init();
 });

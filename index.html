@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -58,6 +58,10 @@
         <button class="spa-nav-tab" data-view="profile" id="nav-profile-tab" title="JWT Аутентификация и профиль">
           <i class="fa-solid fa-shield-halved"></i>
           <span>JWT Авторизация</span>
+        </button>
+        <button class="spa-nav-tab" data-view="upload" title="Загрузить и показать презентацию">
+          <i class="fa-solid fa-file-arrow-up"></i>
+          <span>Загрузить</span>
         </button>
       </nav>
 
@@ -2818,6 +2822,72 @@
     </div>
   </div>
 
+  <!-- ==================== SPA VIEW: ЗАГРУЗКА ПРЕЗЕНТАЦИИ ==================== -->
+  <div class="spa-view" id="view-upload" style="display:none">
+    <div class="upload-container">
+
+      <!-- Drop Zone -->
+      <div class="upload-dropzone" id="upload-dropzone">
+        <i class="fa-solid fa-file-powerpoint upload-dropzone-icon"></i>
+        <h2>Загрузите презентацию</h2>
+        <p>Перетащите <strong>.pptx</strong> или <strong>.pdf</strong> файл сюда, или нажмите для выбора</p>
+        <input type="file" id="file-input" accept=".pptx,.pdf,.ppt" style="display:none">
+        <button class="btn-upload-select" onclick="document.getElementById('file-input').click()">
+          <i class="fa-solid fa-folder-open"></i> Выбрать файл
+        </button>
+        <div class="upload-formats">
+          <span class="format-badge"><i class="fa-solid fa-file-pdf"></i> PDF</span>
+          <span class="format-badge"><i class="fa-solid fa-file-powerpoint"></i> PPTX</span>
+        </div>
+      </div>
+
+      <!-- Progress / Status -->
+      <div class="upload-status" id="upload-status" style="display:none">
+        <div class="upload-progress-bar">
+          <div class="upload-progress-fill" id="upload-progress-fill"></div>
+        </div>
+        <p class="upload-status-text" id="upload-status-text">Загрузка...</p>
+        <button class="btn-upload-cancel" onclick="UploadModule.resetUI()">
+          <i class="fa-solid fa-xmark"></i> Отмена
+        </button>
+      </div>
+
+      <!-- AI Processing Info Badge -->
+      <div class="gemini-badge">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        Powered by <strong>Gemini 2.0 Flash</strong> — AI конвертация в интерактивные слайды
+      </div>
+
+      <!-- How it works -->
+      <div class="upload-how-it-works">
+        <div class="upload-step">
+          <div class="upload-step-icon"><i class="fa-solid fa-upload"></i></div>
+          <div class="upload-step-text">
+            <strong>1. Загрузка</strong>
+            <span>Файл отправляется в Gemini File API</span>
+          </div>
+        </div>
+        <div class="upload-step-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        <div class="upload-step">
+          <div class="upload-step-icon"><i class="fa-solid fa-robot"></i></div>
+          <div class="upload-step-text">
+            <strong>2. AI Анализ</strong>
+            <span>Gemini 2.0 Flash извлекает слайды</span>
+          </div>
+        </div>
+        <div class="upload-step-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        <div class="upload-step">
+          <div class="upload-step-icon"><i class="fa-solid fa-chalkboard"></i></div>
+          <div class="upload-step-text">
+            <strong>3. Показ</strong>
+            <span>HTML-слайды в движке презентации</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Google Firebase SDK (v10 Compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
@@ -2826,5 +2896,6 @@
 
   <!-- Scripts -->
   <script src="script.js"></script>
+  <script src="upload.js"></script>
 </body>
 </html>

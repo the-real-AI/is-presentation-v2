@@ -57,6 +57,17 @@
   to      = "/.netlify/functions/slides"
   status  = 200
 
+# ─── Gemini AI routes ────────────────────────────────────────────────────────
+[[redirects]]
+  from = "/api/gemini/upload"
+  to = "/.netlify/functions/gemini-upload"
+  status = 200
+
+[[redirects]]
+  from = "/api/gemini/convert"
+  to = "/.netlify/functions/gemini-convert"
+  status = 200
+
 # ─── SPA catch-all (must be last) ────────────────────────────────────────────
 [[redirects]]
   from    = "/*"

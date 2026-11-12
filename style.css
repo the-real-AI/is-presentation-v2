@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    ╨Я╨а╨Ю╨Х╨Ъ╨в╨Ш╨а╨Ю╨Т╨Р╨Э╨Ш╨Х ╨Ш╨Э╨д╨Ю╨а╨Ь╨Р╨ж╨Ш╨Ю╨Э╨Э╨л╨е ╨б╨Ш╨б╨в╨Х╨Ь - STYLESHEET
    ╨Ю╨┐╤В╨╕╨╝╨╕╨╖╨╕╤А╨╛╨▓╨░╨╜╨╛ ╨┤╨╗╤П ╤Б╨╡╨╜╤Б╨╛╤А╨╜╤Л╤Е ╨╕╨╜╤В╨╡╤А╨░╨║╤В╨╕╨▓╨╜╤Л╤Е ╨┤╨╛╤Б╨╛╨║ (Smartboard), ╨╝╤Л╤И╨╕ ╨╕ ╤В╨░╤З-╤Н╨║╤А╨░╨╜╨╛╨▓
    ========================================================================== */
@@ -5417,4 +5417,471 @@ body {
     width: 22px !important;
     text-align: center !important;
   }
+}
+
+
+/* ==========================================================================
+   UPLOAD VIEW — Загрузка и AI-конвертация презентаций
+   ========================================================================== */
+
+#view-upload {
+  min-height: calc(100vh - var(--header-height) - var(--dock-height));
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 24px 80px;
+}
+
+.upload-container {
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+/* ─── Drop Zone ─────────────────────────────────────────────────────────── */
+
+.upload-dropzone {
+  width: 100%;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px 32px;
+  border: 2px dashed rgba(0, 242, 254, 0.35);
+  border-radius: 24px;
+  background: rgba(0, 242, 254, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+.upload-dropzone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0, 242, 254, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.upload-dropzone:hover {
+  border-color: rgba(0, 242, 254, 0.65);
+  background: rgba(0, 242, 254, 0.06);
+  box-shadow: 0 0 40px rgba(0, 242, 254, 0.12), inset 0 1px 0 rgba(0, 242, 254, 0.1);
+}
+
+.upload-dropzone.drag-over {
+  border-color: var(--accent-cyan);
+  background: rgba(0, 242, 254, 0.1);
+  box-shadow: 0 0 60px rgba(0, 242, 254, 0.25), 0 0 120px rgba(0, 242, 254, 0.1), inset 0 1px 0 rgba(0, 242, 254, 0.2);
+  transform: scale(1.01);
+}
+
+.upload-dropzone-icon {
+  font-size: 56px;
+  color: var(--accent-cyan);
+  opacity: 0.8;
+  filter: drop-shadow(0 0 16px rgba(0, 242, 254, 0.4));
+  transition: transform 0.3s ease;
+}
+
+.upload-dropzone:hover .upload-dropzone-icon,
+.upload-dropzone.drag-over .upload-dropzone-icon {
+  transform: scale(1.1) translateY(-4px);
+}
+
+.upload-dropzone h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.upload-dropzone p {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.upload-dropzone p strong {
+  color: var(--accent-cyan);
+}
+
+/* ─── Upload Button ─────────────────────────────────────────────────────── */
+
+.btn-upload-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  color: #000;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s;
+  box-shadow: 0 4px 20px rgba(0, 242, 254, 0.3);
+  margin-top: 4px;
+  position: relative;
+  z-index: 1;
+}
+
+.btn-upload-select:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 242, 254, 0.45);
+}
+
+.btn-upload-select:active {
+  transform: scale(0.97);
+}
+
+/* ─── Format Badges ─────────────────────────────────────────────────────── */
+
+.upload-formats {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.format-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.format-badge .fa-file-pdf { color: #f43f5e; }
+.format-badge .fa-file-powerpoint { color: #f59e0b; }
+
+/* ─── Progress / Status ─────────────────────────────────────────────────── */
+
+.upload-status {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 36px 32px;
+  background: rgba(15, 21, 34, 0.7);
+  border: 1px solid rgba(0, 242, 254, 0.15);
+  border-radius: 20px;
+  backdrop-filter: blur(16px);
+}
+
+.upload-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.upload-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue), var(--accent-purple));
+  border-radius: 100px;
+  transition: width 0.5s ease;
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+}
+
+.upload-status-text {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.btn-upload-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  border-radius: 20px;
+  color: var(--accent-rose);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-upload-cancel:hover {
+  background: rgba(244, 63, 94, 0.2);
+  border-color: rgba(244, 63, 94, 0.5);
+}
+
+/* ─── Gemini Badge ──────────────────────────────────────────────────────── */
+
+.gemini-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, rgba(121, 40, 202, 0.2), rgba(0, 242, 254, 0.1));
+  border: 1px solid rgba(121, 40, 202, 0.4);
+  border-radius: 50px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  backdrop-filter: blur(8px);
+}
+
+.gemini-badge i {
+  color: var(--accent-cyan);
+  font-size: 1rem;
+  animation: sparkle-pulse 2s ease-in-out infinite;
+}
+
+.gemini-badge strong {
+  color: var(--accent-cyan);
+  font-weight: 700;
+}
+
+@keyframes sparkle-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.15); }
+}
+
+/* ─── How it works ──────────────────────────────────────────────────────── */
+
+.upload-how-it-works {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 28px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+  width: 100%;
+}
+
+.upload-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.upload-step-icon {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 242, 254, 0.1);
+  border: 1px solid rgba(0, 242, 254, 0.2);
+  border-radius: 12px;
+  font-size: 1rem;
+  color: var(--accent-cyan);
+  flex-shrink: 0;
+}
+
+.upload-step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.upload-step-text strong {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.upload-step-text span {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  line-height: 1.3;
+}
+
+.upload-step-arrow {
+  color: rgba(0, 242, 254, 0.3);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* ─── Error Message ─────────────────────────────────────────────────────── */
+
+.upload-error-msg {
+  width: 100%;
+  padding: 10px 18px;
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  border-radius: 10px;
+  color: var(--accent-rose);
+  font-size: 0.85rem;
+  text-align: center;
+  margin-top: 8px;
+  animation: fade-in 0.3s ease;
+}
+
+/* ─── Uploaded Slide Styles (динамические слайды из AI) ─────────────────── */
+
+.slide-inner.layout-title .slide-title-main {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  text-align: center;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.slide-header-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.slide-num-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 12px;
+  background: rgba(0, 242, 254, 0.1);
+  border: 1px solid rgba(0, 242, 254, 0.25);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.slide-num-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.slide-num-val {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+}
+
+.slide-title-main {
+  font-size: clamp(1.3rem, 2.5vw, 2rem);
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0;
+  line-height: 1.2;
+  flex: 1;
+}
+
+.slide-body-content {
+  flex: 1;
+  font-size: clamp(0.85rem, 1.4vw, 1.05rem);
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.slide-body-content h2,
+.slide-body-content h3 {
+  color: var(--text-main);
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.slide-body-content ul,
+.slide-body-content ol {
+  padding-left: 1.4em;
+  margin: 10px 0;
+}
+
+.slide-body-content li {
+  margin-bottom: 6px;
+}
+
+.slide-body-content strong {
+  color: var(--accent-cyan);
+  font-weight: 700;
+}
+
+.slide-body-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88em;
+  margin: 12px 0;
+}
+
+.slide-body-content th,
+.slide-body-content td {
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+}
+
+.slide-body-content th {
+  background: rgba(0, 242, 254, 0.08);
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.slide-speaker-notes {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 10px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-top: 20px;
+  line-height: 1.4;
+}
+
+.slide-speaker-notes i {
+  color: var(--accent-indigo);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ─── Responsive ────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .upload-how-it-works {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .upload-step-arrow {
+    transform: rotate(90deg);
+  }
+
+  .upload-dropzone {
+    padding: 36px 20px;
+    min-height: 260px;
+  }
+
+  .upload-dropzone h2 {
+    font-size: 1.2rem;
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
