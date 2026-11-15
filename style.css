@@ -5885,3 +5885,78 @@ body {
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ==========================================================================
+   HIGH PERFORMANCE OPTIMIZATIONS (GPU, CPU, MEMORY & WEAK DEVICES)
+   ========================================================================== */
+
+/* 1. Полная заморозка анимаций и скрытие рендеринга на 25 неактивных слайдах */
+.slide:not(.active) {
+  content-visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.slide:not(.active) * {
+  animation-play-state: paused !important;
+}
+
+/* 2. GPU-ускорение активного слайда */
+.slide.active {
+  content-visibility: visible !important;
+  will-change: opacity, transform;
+  transform: translateZ(0);
+}
+
+/* 3. Оптимизация композитинга для мобильных (< 900px) */
+@media (max-width: 900px) {
+  /* Заменяем ресурсоемкие размытия (16-28px) на легкий полупрозрачный фон */
+  .top-nav,
+  .mobile-tools-menu,
+  .card-glass,
+  .case-card,
+  .trend-card,
+  .modal-inner {
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    background: rgba(10, 15, 26, 0.94) !important;
+  }
+
+  /* Снижаем сложность теней */
+  .card-glass,
+  .case-card,
+  .trend-card,
+  .sdlc-step,
+  .cicd-node {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+  }
+}
+
+/* 4. ТУРБО-РЕЖИМ (ЭКО) — максимальный FPS для слабых процессоров и видеокарт */
+body.eco-mode #bg-canvas,
+body.eco-mode #laser-canvas {
+  display: none !important;
+}
+
+body.eco-mode * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  transition-duration: 0.15s !important;
+}
+
+body.eco-mode .top-nav,
+body.eco-mode .mobile-tools-menu,
+body.eco-mode .card-glass,
+body.eco-mode .case-card,
+body.eco-mode .trend-card,
+body.eco-mode .modal-inner {
+  background: #0d1322 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+body.eco-mode .nav-btn#btn-turbo {
+  background: rgba(16, 185, 129, 0.2) !important;
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+}

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -109,6 +109,9 @@
         <button class="nav-btn" id="btn-fullscreen" title="Полноэкранный режим (F)">
           <i class="fa-solid fa-expand"></i>
         </button>
+                <button class="nav-btn" id="btn-turbo" title="Турбо-режим: максимальная скорость для слабых устройств">
+          <i class="fa-solid fa-gauge-high"></i>
+        </button>
         <button class="nav-btn deploy-pill-btn" id="btn-deploy" title="Инструкция по бесплатному открытию в облаке">
           <i class="fa-solid fa-cloud-arrow-up"></i>
           <span>В облако</span>
@@ -121,6 +124,10 @@
           <i class="fa-solid fa-ellipsis-vertical"></i>
         </button>
         <div class="mobile-tools-menu" id="mobile-tools-menu">
+                    <button class="tools-menu-item" id="mb-btn-turbo">
+            <i class="fa-solid fa-gauge-high text-cyan"></i>
+            <span id="mb-turbo-text">Турбо-режим (Ускорение)</span>
+          </button>
           <button class="tools-menu-item" id="mb-btn-laser">
             <i class="fa-solid fa-wand-magic-sparkles text-cyan"></i>
             <span>Лазерная указка</span>
@@ -2728,7 +2735,7 @@
           <div class="video-card">
             <div class="video-embed-wrapper">
               <iframe 
-                src="https://www.youtube-nocookie.com/embed/i53Gi_K3o7I?enablejsapi=1" 
+                data-src="https://www.youtube-nocookie.com/embed/i53Gi_K3o7I?enablejsapi=1" src="about:blank" loading="lazy" 
                 title="System Design Basics" 
                 frameborder="0" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -2745,7 +2752,7 @@
           <div class="video-card">
             <div class="video-embed-wrapper">
               <iframe 
-                src="https://www.youtube-nocookie.com/embed/cz1eQd2y96E?enablejsapi=1" 
+                data-src="https://www.youtube-nocookie.com/embed/cz1eQd2y96E?enablejsapi=1" src="about:blank" loading="lazy" 
                 title="Microservices Architecture Explained" 
                 frameborder="0" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 

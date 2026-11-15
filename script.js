@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ПРОЕКТИРОВАНИЕ ИНФОРМАЦИОННЫХ СИСТЕМ
  * Презентационный движок, оптимизированный для сенсорных интерактивных досок (Smartboard)
  * Поддержка: мультитач, свайпы, лазерная указка/маркер, мгновенный отклик на касания
@@ -562,7 +562,7 @@ const Presentation = (() => {
     }, { passive: true });
   }
 
-  // Interactive Background Canvas with Shockwaves
+  // Interactive Background Canvas with Shockwaves (High-Performance Engine)
   let shockwaves = [];
 
   function initCanvasAnimation() {
@@ -572,77 +572,129 @@ const Presentation = (() => {
 
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
+    let bgAnimFrame = null;
+    let lastFrameTime = 0;
+
+    const isLowEnd = (
+      window.innerWidth < 768 ||
+      (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
+      (navigator.deviceMemory && navigator.deviceMemory <= 4)
+    );
+
+    // Auto-detect weak hardware and activate Eco-mode if saved or detected on mobile
+    const savedEco = localStorage.getItem('presentation_eco_mode');
+    if (savedEco === 'true' || (savedEco === null && isLowEnd && window.innerWidth < 450)) {
+      setEcoMode(true, true);
+    }
 
     window.addEventListener('resize', () => {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
+    }, { passive: true });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (bgAnimFrame) {
+          cancelAnimationFrame(bgAnimFrame);
+          bgAnimFrame = null;
+        }
+      } else {
+        if (!bgAnimFrame && !isEcoMode) {
+          bgAnimFrame = requestAnimationFrame(animate);
+        }
+      }
     });
 
     window.addEventListener('pointerdown', (e) => {
+      if (isEcoMode) return;
       shockwaves.push({
         x: e.clientX,
         y: e.clientY,
         radius: 6,
-        maxRadius: 110,
-        opacity: 0.65
+        maxRadius: isLowEnd ? 75 : 110,
+        opacity: 0.6
       });
-    });
+      if (!bgAnimFrame) bgAnimFrame = requestAnimationFrame(animate);
+    }, { passive: true });
 
     const particles = [];
-    const count = Math.min(Math.floor((width * height) / 14000), 75);
+    // Для мобильных и слабых устройств снижаем количество частиц до 16-20
+    const count = isLowEnd 
+      ? Math.min(Math.floor((width * height) / 36000), 20)
+      : Math.min(Math.floor((width * height) / 18000), 45);
 
     for (let i = 0; i < count; i++) {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.6,
-        vy: (Math.random() - 0.5) * 0.6,
-        radius: Math.random() * 2 + 1,
+        vx: (Math.random() - 0.5) * (isLowEnd ? 0.35 : 0.55),
+        vy: (Math.random() - 0.5) * (isLowEnd ? 0.35 : 0.55),
+        radius: Math.random() * 1.6 + 0.8,
         color: Math.random() > 0.4 ? 'rgba(0, 242, 254, ' : 'rgba(99, 102, 241, '
       });
     }
 
-    function animate() {
+    const maxDist = isLowEnd ? 85 : 120;
+    const maxDistSq = maxDist * maxDist;
+
+    function animate(now) {
+      if (isEcoMode) {
+        ctx.clearRect(0, 0, width, height);
+        bgAnimFrame = null;
+        return;
+      }
+
+      // На мобильных лимитируем ~30 FPS для экономии батареи и снижения нагрузки на GPU
+      if (isLowEnd && (now - lastFrameTime < 32)) {
+        bgAnimFrame = requestAnimationFrame(animate);
+        return;
+      }
+      lastFrameTime = now;
+
       ctx.clearRect(0, 0, width, height);
 
-      // Draw shockwaves
+      // Рисуем круговые волны (shockwaves)
       for (let s = shockwaves.length - 1; s >= 0; s--) {
         const sw = shockwaves[s];
-        sw.radius += 4;
-        sw.opacity -= 0.022;
+        sw.radius += isLowEnd ? 5 : 4;
+        sw.opacity -= 0.026;
 
         if (sw.opacity <= 0 || sw.radius >= sw.maxRadius) {
           shockwaves.splice(s, 1);
         } else {
-          ctx.strokeStyle = `rgba(0, 242, 254, ${sw.opacity})`;
-          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = gba(0, 242, 254, );
+          ctx.lineWidth = 1.2;
           ctx.beginPath();
           ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
           ctx.stroke();
         }
       }
 
-      // Draw connections
+      // Соединительные линии: оптимизировано через квадрат расстояния без лишних Math.sqrt
       for (let i = 0; i < particles.length; i++) {
+        const p1 = particles[i];
         for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+          const p2 = particles[j];
+          const dx = p1.x - p2.x;
+          const dy = p1.y - p2.y;
+          const distSq = dx * dx + dy * dy;
 
-          if (dist < 135) {
-            const alpha = (1 - dist / 135) * 0.18;
-            ctx.strokeStyle = `rgba(0, 242, 254, ${alpha})`;
-            ctx.lineWidth = 1;
+          if (distSq < maxDistSq) {
+            const dist = Math.sqrt(distSq);
+            const alpha = (1 - dist / maxDist) * 0.16;
+            ctx.strokeStyle = gba(0, 242, 254, );
+            ctx.lineWidth = 0.9;
             ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
             ctx.stroke();
           }
         }
       }
 
-      // Draw particles
-      particles.forEach(p => {
+      // Рисуем частицы
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
 
@@ -651,18 +703,17 @@ const Presentation = (() => {
         if (p.y < 0) p.y = height;
         if (p.y > height) p.y = 0;
 
-        ctx.fillStyle = p.color + '0.7)';
+        ctx.fillStyle = p.color + '0.75)';
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fill();
-      });
+      }
 
-      requestAnimationFrame(animate);
+      bgAnimFrame = requestAnimationFrame(animate);
     }
 
-    animate();
+    bgAnimFrame = requestAnimationFrame(animate);
   }
-
   // Interactive Widgets (Failover simulation & API click)
   function initInteractiveWidgets() {
     const failedNode = document.querySelector('.node-ha-box.failed');
@@ -730,6 +781,9 @@ const Presentation = (() => {
     const btnHelp = document.getElementById('btn-help');
     if (btnHelp) btnHelp.addEventListener('pointerdown', () => toggleHelpModal());
 
+        const btnTurbo = document.getElementById('btn-turbo');
+    if (btnTurbo) btnTurbo.addEventListener('pointerdown', toggleTurboMode);
+
     const btnDeploy = document.getElementById('btn-deploy');
     if (btnDeploy) btnDeploy.addEventListener('pointerdown', () => toggleDeployModal());
     // Mobile Tools Dropdown Menu (одна кнопка в углу для телефонов)
@@ -762,6 +816,7 @@ const Presentation = (() => {
       bindToolItem('mb-btn-laser', toggleLaserMode);
       bindToolItem('mb-btn-sound', toggleSound);
       bindToolItem('mb-btn-overview', () => toggleOverviewModal());
+            bindToolItem('mb-btn-turbo', toggleTurboMode);
       bindToolItem('mb-btn-video', () => toggleVideoModal());
       bindToolItem('mb-btn-help', () => toggleHelpModal());
       bindToolItem('mb-btn-fullscreen', toggleFullscreen);
