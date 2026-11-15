@@ -239,8 +239,12 @@ const Presentation = (() => {
     animateConfetti();
   }
 
-  // Go to slide
+  // Go to slide (with rapid tap / double-fire debounce)
+  let lastSlideChangeTime = 0;
   function goToSlide(targetSlide) {
+    const now = Date.now();
+    if (now - lastSlideChangeTime < 180) return;
+    lastSlideChangeTime = now;
     if (targetSlide < 1 || targetSlide > totalSlides) return;
     if (targetSlide === currentSlide) return;
 
@@ -309,8 +313,8 @@ const Presentation = (() => {
       const isMobile = vw < 900;
       const maxAllowedWidth = vw - (vw < 480 ? 16 : 28);
 
-      document.documentElement.style.setProperty('--real-vw', ${vw}px);
-      document.documentElement.style.setProperty('--safe-content-w', ${maxAllowedWidth}px);
+      document.documentElement.style.setProperty('--real-vw', vw + 'px');
+      document.documentElement.style.setProperty('--safe-content-w', maxAllowedWidth + 'px');
 
       // Все типы карточек и плашек на всех слайдах
       const cards = slideEl.querySelectorAll(
@@ -356,8 +360,7 @@ const Presentation = (() => {
     }
 
     function runOptimization() {
-      const activeSlide = document.querySelector(.slide[data-slide=""]);
-    if (activeSlide) ScreenBoundaryOptimizer.optimizeSlide(activeSlide);
+      const activeSlide = document.querySelector('.slide.active') || document.querySelector('.slide[data-slide="' + currentSlide + '"]');
       if (activeSlide) optimizeSlide(activeSlide);
     }
 
@@ -386,6 +389,7 @@ const Presentation = (() => {
       runOptimization
     };
   })();
+
 
   function updateUI() {
     if (counterCurrent) {
@@ -768,7 +772,8 @@ const Presentation = (() => {
         if (sw.opacity <= 0 || sw.radius >= sw.maxRadius) {
           shockwaves.splice(s, 1);
         } else {
-          ctx.strokeStyle = gba(0, 242, 254, );
+          ctx.strokeStyle = 
+gba(0, 242, 254, );
           ctx.lineWidth = 1.2;
           ctx.beginPath();
           ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
@@ -788,7 +793,8 @@ const Presentation = (() => {
           if (distSq < maxDistSq) {
             const dist = Math.sqrt(distSq);
             const alpha = (1 - dist / maxDist) * 0.16;
-            ctx.strokeStyle = gba(0, 242, 254, );
+            ctx.strokeStyle = 
+gba(0, 242, 254, );
             ctx.lineWidth = 0.9;
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
@@ -866,12 +872,28 @@ const Presentation = (() => {
     // Dock Buttons
     const btnPrev = document.getElementById('dock-btn-prev');
     const btnNext = document.getElementById('dock-btn-next');
-    if (btnPrev) btnPrev.addEventListener('pointerdown', (e) => { e.preventDefault(); prevSlide(); });
-    if (btnNext) btnNext.addEventListener('pointerdown', (e) => { e.preventDefault(); nextSlide(); });
+
+    const onNext = (e) => { if (e) e.preventDefault(); nextSlide(); };
+    const onPrev = (e) => { if (e) e.preventDefault(); prevSlide(); };
+
+    if (btnPrev) {
+      btnPrev.addEventListener('pointerdown', onPrev);
+      btnPrev.addEventListener('click', onPrev);
+    }
+    if (btnNext) {
+      btnNext.addEventListener('pointerdown', onNext);
+      btnNext.addEventListener('click', onNext);
+    }
 
     // Floating Smartboard Side Touch Buttons
-    if (sbNavPrev) sbNavPrev.addEventListener('pointerdown', (e) => { e.preventDefault(); prevSlide(); });
-    if (sbNavNext) sbNavNext.addEventListener('pointerdown', (e) => { e.preventDefault(); nextSlide(); });
+    if (sbNavPrev) {
+      sbNavPrev.addEventListener('pointerdown', onPrev);
+      sbNavPrev.addEventListener('click', onPrev);
+    }
+    if (sbNavNext) {
+      sbNavNext.addEventListener('pointerdown', onNext);
+      sbNavNext.addEventListener('click', onNext);
+    }
 
     // Header buttons
     if (btnSound) btnSound.addEventListener('pointerdown', toggleSound);
@@ -897,36 +919,17 @@ const Presentation = (() => {
     const mobileToolsMenu = document.getElementById('mobile-tools-menu');
 
     if (btnMobileTools && mobileToolsMenu) {
-      btnMobileTools.addEventListener('pointerdown', (e) => {
-        e.stopPropagation();
-        mobileToolsMenu.classList.toggle('active');
-        playTone(550, 'sine', 0.05, 0.03);
-      });
+            // Handled via onclick="ISPresentation.toggleMobileTools()" to prevent double-toggle
 
-      document.addEventListener('pointerdown', (e) => {
-        if (!mobileToolsMenu.contains(e.target) && e.target !== btnMobileTools) {
+      const closeMenuOutside = (e) => {
+        if (!mobileToolsMenu.contains(e.target) && !btnMobileTools.contains(e.target)) {
           mobileToolsMenu.classList.remove('active');
         }
-      });
-
-      const bindToolItem = (id, action) => {
-        const el = document.getElementById(id);
-        if (el) {
-          el.addEventListener('pointerdown', () => {
-            mobileToolsMenu.classList.remove('active');
-            action();
-          });
-        }
       };
+      document.addEventListener('pointerdown', closeMenuOutside);
+      document.addEventListener('click', closeMenuOutside);
 
-      bindToolItem('mb-btn-laser', toggleLaserMode);
-      bindToolItem('mb-btn-sound', toggleSound);
-      bindToolItem('mb-btn-overview', () => toggleOverviewModal());
-            bindToolItem('mb-btn-turbo', toggleTurboMode);
-      bindToolItem('mb-btn-video', () => toggleVideoModal());
-      bindToolItem('mb-btn-help', () => toggleHelpModal());
-      bindToolItem('mb-btn-fullscreen', toggleFullscreen);
-      bindToolItem('mb-btn-deploy', () => toggleDeployModal());
+      // Mobile tools menu items are handled via onclick in index.html
     }
 
     // Close modals on touch outside
@@ -937,6 +940,48 @@ const Presentation = (() => {
         });
       }
     });
+  }
+
+  // Turbo / Eco Performance Mode (Ускорение для слабых устройств)
+  let isEcoMode = false;
+  function setEcoMode(enable, silent) {
+    isEcoMode = !!enable;
+    document.body.classList.toggle('eco-mode', isEcoMode);
+    try {
+      localStorage.setItem('presentation_eco_mode', isEcoMode ? 'true' : 'false');
+    } catch(e) {}
+
+    const btnTurbo = document.getElementById('btn-turbo');
+    if (btnTurbo) {
+      btnTurbo.classList.toggle('active-tool', isEcoMode);
+      btnTurbo.style.color = isEcoMode ? '#10b981' : '';
+      btnTurbo.style.borderColor = isEcoMode ? 'rgba(16, 185, 129, 0.6)' : '';
+    }
+
+    const mbText = document.getElementById('mb-turbo-text');
+    if (mbText) {
+      mbText.textContent = isEcoMode ? 'Турбо-режим (ВКЛ)' : 'Турбо-режим (Ускорение)';
+    }
+
+    if (!silent) {
+      playTone(isEcoMode ? 660 : 440, 'sine', 0.08, 0.04);
+    }
+  }
+
+  function toggleTurboMode() {
+    setEcoMode(!isEcoMode);
+  }
+
+  function toggleMobileTools(forceState, e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const menu = document.getElementById('mobile-tools-menu');
+    if (!menu) return;
+    const isCurrentlyActive = menu.classList.contains('active');
+    const targetState = typeof forceState === 'boolean' ? forceState : !isCurrentlyActive;
+    menu.classList.toggle('active', targetState);
+    if (targetState) {
+      playTone(550, 'sine', 0.05, 0.03);
+    }
   }
 
   // Initialize
@@ -962,6 +1007,8 @@ const Presentation = (() => {
     toggleOverviewModal,
     toggleVideoModal,
     toggleDeployModal,
+    toggleMobileTools,
+    toggleTurboMode,
     optimizeScreen: ScreenBoundaryOptimizer.runOptimization,
     openDeployModal: () => toggleDeployModal(true),
     toggleHelpModal,
@@ -1039,6 +1086,10 @@ const Presentation = (() => {
     }
   };
 })();
+window.ISPresentation = Presentation;
+window.SlideDeck = Presentation;
+
+
 
 // ============================================================================
 // SINGLE PAGE APPLICATION (SPA) ROUTER & MULTIPLATFORM MANAGER
@@ -1174,6 +1225,10 @@ const SpaRouter = (() => {
     getCurrentView: () => currentView
   };
 })();
+window.ISPresentation = Presentation;
+window.SlideDeck = Presentation;
+
+
 
 // ============================================================================
 // GOOGLE FIREBASE CONFIGURATION & INITIALIZATION (SECURE RUNTIME INJECTION)
@@ -1616,6 +1671,10 @@ const AuthModule = (() => {
     getCurrentUser: () => currentUser
   };
 })();
+window.ISPresentation = Presentation;
+window.SlideDeck = Presentation;
+
+
 
 // ============================================================================
 // БАЗА ДАННЫХ ИС: РЕЕСТР СИСТЕМ (GOOGLE CLOUD FIRESTORE + X-API-KEY)
@@ -1788,6 +1847,10 @@ const DatabaseModule = (() => {
     deleteSystem
   };
 })();
+window.ISPresentation = Presentation;
+window.SlideDeck = Presentation;
+
+
 
 // ============================================================================
 // API EXPLORER & X-API-KEY CONSOLE MODULE (SWAGGER-LIKE TESTER)
@@ -1937,6 +2000,10 @@ const ApiConsoleModule = (() => {
     copyCurl
   };
 })();
+window.ISPresentation = Presentation;
+window.SlideDeck = Presentation;
+
+
 
 // Boot on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
