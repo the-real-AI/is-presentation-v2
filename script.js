@@ -287,6 +287,106 @@ const Presentation = (() => {
   }
 
   // Update Top Bar & Dock UI
+
+  // ==========================================================================
+  // SCREEN BOUNDARY OPTIMIZER & AUTO-ADAPTATION ENGINE
+  // Автоматически определяет границы экрана и подгоняет все плашки под размер
+  // ==========================================================================
+  const ScreenBoundaryOptimizer = (() => {
+    let resizeTimer = null;
+
+    function getViewportWidth() {
+      return Math.min(
+        window.innerWidth || 0,
+        document.documentElement.clientWidth || window.innerWidth,
+        window.visualViewport ? window.visualViewport.width : window.innerWidth
+      );
+    }
+
+    function optimizeSlide(slideEl) {
+      if (!slideEl) return;
+      const vw = getViewportWidth();
+      const isMobile = vw < 900;
+      const maxAllowedWidth = vw - (vw < 480 ? 16 : 28);
+
+      document.documentElement.style.setProperty('--real-vw', ${vw}px);
+      document.documentElement.style.setProperty('--safe-content-w', ${maxAllowedWidth}px);
+
+      // Все типы карточек и плашек на всех слайдах
+      const cards = slideEl.querySelectorAll(
+        '.card-glass, .case-card, .trend-card, .cost-box, .visual-diagram-card, ' +
+        '.erd-table-card, .dist-svc-card, .consumer-box, .sdlc-step, .cicd-node, ' +
+        '.service-box, .kanban-col, .arch-visual-box, .v-node, .meta-card, .hero-visual-card'
+      );
+
+      cards.forEach(card => {
+        card.style.boxSizing = 'border-box';
+        card.style.maxWidth = '100%';
+        card.style.overflowWrap = 'break-word';
+        card.style.wordBreak = 'break-word';
+      });
+
+      // Все сетки и ряды: на мобильных переводим в аккуратные вертикальные стопки
+      const grids = slideEl.querySelectorAll(
+        '.grid-2, .grid-3, .grid-4, .plan-grid, .conclusions-grid, ' +
+        '.arch-compare-grid, .micro-cluster-grid, .services-distributed-row, ' +
+        '.consumers-row, .erd-tables-grid, .v-pair-row, .trends-grid, ' +
+        '.capex-opex-grid, .content-columns-2, .content-columns-custom, ' +
+        '.hero-split-layout, .services-layer, .title-meta-grid'
+      );
+
+      grids.forEach(grid => {
+        grid.style.boxSizing = 'border-box';
+        grid.style.maxWidth = '100%';
+        if (isMobile) {
+          grid.style.width = '100%';
+        }
+      });
+
+      // Защита от горизонтального переполнения экрана
+      const innerBlocks = slideEl.querySelectorAll('.slide-inner > *');
+      innerBlocks.forEach(block => {
+        if (block.scrollWidth > vw) {
+          block.style.maxWidth = '100%';
+          block.style.boxSizing = 'border-box';
+          block.style.overflowX = 'auto';
+          block.style.webkitOverflowScrolling = 'touch';
+        }
+      });
+    }
+
+    function runOptimization() {
+      const activeSlide = document.querySelector(.slide[data-slide=""]);
+    if (activeSlide) ScreenBoundaryOptimizer.optimizeSlide(activeSlide);
+      if (activeSlide) optimizeSlide(activeSlide);
+    }
+
+    function init() {
+      runOptimization();
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(runOptimization, 80);
+      }, { passive: true });
+
+      window.addEventListener('orientationchange', () => {
+        setTimeout(runOptimization, 120);
+      }, { passive: true });
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(runOptimization, 80);
+        }, { passive: true });
+      }
+    }
+
+    return {
+      init,
+      optimizeSlide,
+      runOptimization
+    };
+  })();
+
   function updateUI() {
     if (counterCurrent) {
       counterCurrent.textContent = String(currentSlide).padStart(2, '0');
@@ -575,6 +675,12 @@ const Presentation = (() => {
     let bgAnimFrame = null;
     let lastFrameTime = 0;
 
+    const isTouchOrMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.innerWidth < 900;
+    if (isTouchOrMobile) {
+      canvas.style.display = 'none';
+      return; // Отключаем холст на мобильных: мгновенные 60 FPS без лагов!
+    }
+
     const isLowEnd = (
       window.innerWidth < 768 ||
       (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
@@ -844,6 +950,7 @@ const Presentation = (() => {
     initLaserPointer();
     initInteractiveWidgets();
     startTimer();
+    ScreenBoundaryOptimizer.init();
     updateUI();
   }
 
@@ -855,6 +962,7 @@ const Presentation = (() => {
     toggleOverviewModal,
     toggleVideoModal,
     toggleDeployModal,
+    optimizeScreen: ScreenBoundaryOptimizer.runOptimization,
     openDeployModal: () => toggleDeployModal(true),
     toggleHelpModal,
     toggleLaserMode,
