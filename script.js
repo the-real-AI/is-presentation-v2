@@ -264,6 +264,7 @@ const Presentation = (() => {
       nextSlideEl.classList.remove('slide-prev');
       nextSlideEl.classList.add('active');
       triggerNumberCounters(nextSlideEl);
+      ScreenBoundaryOptimizer.optimizeSlide(nextSlideEl);
     }
 
     currentSlide = targetSlide;
@@ -307,13 +308,47 @@ const Presentation = (() => {
       );
     }
 
+    function getViewportHeight() {
+      return Math.min(
+        window.innerHeight || 0,
+        document.documentElement.clientHeight || window.innerHeight,
+        window.visualViewport ? window.visualViewport.height : window.innerHeight
+      );
+    }
+
+    // Оптимизация верхней панели (плашка шапки)
+    function optimizeHeader() {
+      const topNav = document.querySelector('.top-nav');
+      if (!topNav) return;
+      const vw = getViewportWidth();
+
+      const isNarrow = vw < 1400;
+      const isMobile = vw <= 992;
+      const exceeds = topNav.scrollWidth > vw;
+
+      topNav.classList.toggle('nav-compact', isNarrow || exceeds);
+      topNav.classList.toggle('nav-mobile', isMobile);
+    }
+
+    // Оптимизация нижнего дока (плашка навигации)
+    function optimizeDock() {
+      const dockList = document.getElementById('dock-dots-container');
+      if (!dockList) return;
+      const vw = getViewportWidth();
+      const maxDockWidth = Math.min(680, Math.max(160, vw - 260));
+      dockList.style.maxWidth = `${maxDockWidth}px`;
+    }
+
     function optimizeSlide(slideEl) {
       if (!slideEl) return;
       const vw = getViewportWidth();
+      const vh = getViewportHeight();
       const isMobile = vw < 900;
-      const maxAllowedWidth = vw - (vw < 480 ? 16 : 28);
+      const isTablet = vw < 1150;
+      const maxAllowedWidth = vw - (vw < 480 ? 16 : (vw < 900 ? 28 : 140));
 
       document.documentElement.style.setProperty('--real-vw', vw + 'px');
+      document.documentElement.style.setProperty('--real-vh', vh + 'px');
       document.documentElement.style.setProperty('--safe-content-w', maxAllowedWidth + 'px');
 
       // Все типы карточек и плашек на всех слайдах
@@ -330,7 +365,7 @@ const Presentation = (() => {
         card.style.wordBreak = 'break-word';
       });
 
-      // Все сетки и ряды: на мобильных переводим в аккуратные вертикальные стопки
+      // Все сетки и ряды: на мобильных и планшетах переводим в аккуратные вертикальные стопки
       const grids = slideEl.querySelectorAll(
         '.grid-2, .grid-3, .grid-4, .plan-grid, .conclusions-grid, ' +
         '.arch-compare-grid, .micro-cluster-grid, .services-distributed-row, ' +
@@ -342,15 +377,33 @@ const Presentation = (() => {
       grids.forEach(grid => {
         grid.style.boxSizing = 'border-box';
         grid.style.maxWidth = '100%';
-        if (isMobile) {
+        if (isTablet && grid.classList.contains('hero-split-layout')) {
+          grid.style.display = 'flex';
+          grid.style.flexDirection = 'column';
+          grid.style.gap = '16px';
+        } else if (isMobile) {
           grid.style.width = '100%';
         }
       });
 
-      // Защита от горизонтального переполнения экрана
+      // SVG сфера на 1-м слайде: динамическая подгонка размера под экран
+      const techGlobe = slideEl.querySelector('.tech-globe-svg');
+      if (techGlobe) {
+        const globeMaxW = Math.min(300, vw - 60, vh > 700 ? 300 : 220);
+        techGlobe.style.maxWidth = `${globeMaxW}px`;
+      }
+
+      // Защита от горизонтального переполнения слайда (учитывая боковые отступы)
+      const slideInner = slideEl.querySelector('.slide-inner');
+      if (slideInner) {
+        slideInner.style.boxSizing = 'border-box';
+        slideInner.style.maxWidth = '100%';
+        slideInner.style.overflowX = 'hidden';
+      }
+
       const innerBlocks = slideEl.querySelectorAll('.slide-inner > *');
       innerBlocks.forEach(block => {
-        if (block.scrollWidth > vw) {
+        if (block.scrollWidth > maxAllowedWidth) {
           block.style.maxWidth = '100%';
           block.style.boxSizing = 'border-box';
           block.style.overflowX = 'auto';
@@ -360,6 +413,8 @@ const Presentation = (() => {
     }
 
     function runOptimization() {
+      optimizeHeader();
+      optimizeDock();
       const activeSlide = document.querySelector('.slide.active') || document.querySelector('.slide[data-slide="' + currentSlide + '"]');
       if (activeSlide) optimizeSlide(activeSlide);
     }
@@ -368,17 +423,17 @@ const Presentation = (() => {
       runOptimization();
       window.addEventListener('resize', () => {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(runOptimization, 80);
+        resizeTimer = setTimeout(runOptimization, 60);
       }, { passive: true });
 
       window.addEventListener('orientationchange', () => {
-        setTimeout(runOptimization, 120);
+        setTimeout(runOptimization, 100);
       }, { passive: true });
 
       if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
           clearTimeout(resizeTimer);
-          resizeTimer = setTimeout(runOptimization, 80);
+          resizeTimer = setTimeout(runOptimization, 60);
         }, { passive: true });
       }
     }
@@ -386,6 +441,8 @@ const Presentation = (() => {
     return {
       init,
       optimizeSlide,
+      optimizeHeader,
+      optimizeDock,
       runOptimization
     };
   })();
@@ -506,6 +563,7 @@ const Presentation = (() => {
     const canvas = document.getElementById('laser-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    let laserAnimFrame = null;
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -513,7 +571,7 @@ const Presentation = (() => {
     window.addEventListener('resize', () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-    });
+    }, { passive: true });
 
     function addLaserPoint(x, y) {
       laserTrail.push({
@@ -522,6 +580,9 @@ const Presentation = (() => {
         life: 1.0,
         radius: 8
       });
+      if (!laserAnimFrame) {
+        laserAnimFrame = requestAnimationFrame(renderLaser);
+      }
     }
 
     // Touch / Pointer drawing on whiteboard
@@ -529,13 +590,13 @@ const Presentation = (() => {
       if (laserMode && e.buttons > 0) {
         addLaserPoint(e.clientX, e.clientY);
       }
-    });
+    }, { passive: true });
 
     window.addEventListener('pointerdown', (e) => {
       if (laserMode) {
         addLaserPoint(e.clientX, e.clientY);
       }
-    });
+    }, { passive: true });
 
     function renderLaser() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -557,12 +618,11 @@ const Presentation = (() => {
             ctx.shadowBlur = 0;
           }
         }
+        laserAnimFrame = requestAnimationFrame(renderLaser);
+      } else {
+        laserAnimFrame = null;
       }
-
-      requestAnimationFrame(renderLaser);
     }
-
-    renderLaser();
   }
 
   // Keyboard navigation
@@ -772,8 +832,7 @@ const Presentation = (() => {
         if (sw.opacity <= 0 || sw.radius >= sw.maxRadius) {
           shockwaves.splice(s, 1);
         } else {
-          ctx.strokeStyle = 
-gba(0, 242, 254, );
+          ctx.strokeStyle = `rgba(0, 242, 254, ${sw.opacity})`;
           ctx.lineWidth = 1.2;
           ctx.beginPath();
           ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
@@ -793,8 +852,7 @@ gba(0, 242, 254, );
           if (distSq < maxDistSq) {
             const dist = Math.sqrt(distSq);
             const alpha = (1 - dist / maxDist) * 0.16;
-            ctx.strokeStyle = 
-gba(0, 242, 254, );
+            ctx.strokeStyle = `rgba(0, 242, 254, ${alpha})`;
             ctx.lineWidth = 0.9;
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
