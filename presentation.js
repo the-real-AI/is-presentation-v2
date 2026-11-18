@@ -402,6 +402,7 @@ const Presentation = (() => {
     const canvas = document.getElementById('laser-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    let laserAnimFrame = null;
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -409,7 +410,7 @@ const Presentation = (() => {
     window.addEventListener('resize', () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-    });
+    }, { passive: true });
 
     function addLaserPoint(x, y) {
       laserTrail.push({
@@ -418,6 +419,9 @@ const Presentation = (() => {
         life: 1.0,
         radius: 8
       });
+      if (!laserAnimFrame) {
+        laserAnimFrame = requestAnimationFrame(renderLaser);
+      }
     }
 
     // Touch / Pointer drawing on whiteboard
@@ -425,13 +429,13 @@ const Presentation = (() => {
       if (laserMode && e.buttons > 0) {
         addLaserPoint(e.clientX, e.clientY);
       }
-    });
+    }, { passive: true });
 
     window.addEventListener('pointerdown', (e) => {
       if (laserMode) {
         addLaserPoint(e.clientX, e.clientY);
       }
-    });
+    }, { passive: true });
 
     function renderLaser() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -453,12 +457,11 @@ const Presentation = (() => {
             ctx.shadowBlur = 0;
           }
         }
+        laserAnimFrame = requestAnimationFrame(renderLaser);
+      } else {
+        laserAnimFrame = null;
       }
-
-      requestAnimationFrame(renderLaser);
     }
-
-    renderLaser();
   }
 
   // Keyboard navigation
