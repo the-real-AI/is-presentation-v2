@@ -202,6 +202,9 @@ html, body {
   top: 0;
   left: 0;
   right: 0;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
   height: var(--header-height);
   background: rgba(8, 12, 20, 0.92);
   backdrop-filter: blur(16px);
@@ -210,25 +213,29 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  padding: 0 12px;
   z-index: 100;
+  overflow: hidden;
 }
 
 .nav-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .logo-pill {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 16px;
+  gap: 8px;
+  padding: 6px 14px;
   border-radius: 9999px;
   background: rgba(0, 242, 254, 0.08);
   border: 1px solid rgba(0, 242, 254, 0.25);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .pulse-dot {
@@ -243,9 +250,13 @@ html, body {
 .logo-text {
   font-size: 0.8rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   color: var(--accent-cyan);
   font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
 }
 
 .topic-title {
@@ -300,6 +311,8 @@ html, body {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
+  max-width: 100%;
 }
 
 .timer-badge {
@@ -391,9 +404,11 @@ html, body {
    ========================================================================== */
 .presentation-container {
   position: relative;
-  width: 100vw;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
   height: calc(100vh - var(--header-height) - var(--dock-height));
-  margin-top: calc(var(--header-height) + 4px);
+  margin-top: var(--header-height);
   z-index: 10;
   overflow: hidden;
 }
@@ -404,7 +419,8 @@ html, body {
   left: 0;
   width: 100%;
   height: 100%;
-  padding: 16px 70px; /* ╨Ю╤В╤Б╤В╤Г╨┐ ╨┐╨╛ ╨║╤А╨░╤П╨╝ ╨┤╨╗╤П ╨▒╨╛╨║╨╛╨▓╤Л╤Е ╨║╨╜╨╛╨┐╨╛╨║ ╨┤╨╛╤Б╨║╨╕ */
+  box-sizing: border-box;
+  padding: 16px 70px; /* Отступ по краям для боковых кнопок доски */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -432,7 +448,10 @@ html, body {
   width: 100%;
   max-width: 1380px;
   max-height: 100%;
+  box-sizing: border-box;
   overflow-y: auto;
+  overflow-x: hidden;
+  margin: auto 0;
   padding-right: 8px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
@@ -2045,6 +2064,9 @@ html, body {
   bottom: 0;
   left: 0;
   right: 0;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
   height: var(--dock-height);
   background: rgba(8, 12, 20, 0.92);
   backdrop-filter: blur(16px);
@@ -2054,7 +2076,8 @@ html, body {
   align-items: center;
   justify-content: center;
   z-index: 100;
-  padding: 0 24px;
+  padding: 0 16px;
+  overflow: hidden;
 }
 
 .dock-inner {
@@ -2064,6 +2087,7 @@ html, body {
   width: 100%;
   max-width: 1100px;
   justify-content: space-between;
+  box-sizing: border-box;
 }
 
 /* Touch-friendly buttons (min 48px height) */
@@ -2104,9 +2128,12 @@ html, body {
   align-items: center;
   gap: 8px;
   overflow-x: auto;
-  max-width: 680px;
+  overflow-y: hidden;
+  contain: paint;
+  max-width: min(680px, calc(100vw - 250px));
   padding: 8px 4px;
   scrollbar-width: none;
+  box-sizing: border-box;
 }
 
 .dock-slide-list::-webkit-scrollbar {
@@ -4560,6 +4587,139 @@ body {
 .mobile-tools-dropdown-wrapper {
   display: none;
   position: relative;
+}
+
+.tools-dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.tools-dropdown-btn:hover {
+  background: rgba(0, 242, 254, 0.15);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.mobile-tools-menu {
+  display: none !important;
+  position: absolute !important;
+  top: calc(100% + 8px) !important;
+  right: 0 !important;
+  width: 250px !important;
+  background: rgba(10, 15, 26, 0.98) !important;
+  backdrop-filter: blur(28px) !important;
+  -webkit-backdrop-filter: blur(28px) !important;
+  border: 1px solid rgba(0, 242, 254, 0.3) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), 0 0 20px rgba(0, 242, 254, 0.15) !important;
+  border-radius: 14px !important;
+  padding: 8px !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  z-index: 1000 !important;
+}
+
+.mobile-tools-menu.active {
+  display: flex !important;
+  animation: pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+}
+
+.tools-menu-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 10px 12px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 8px !important;
+  color: var(--text-main) !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  width: 100% !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  transition: background 0.15s ease !important;
+}
+
+.tools-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ── Плавная адаптация шапки на средних и узких экранах (1150px - 1450px) ── */
+@media (max-width: 1450px) {
+  .topic-title {
+    display: none !important;
+  }
+  .spa-nav-tab span {
+    display: none !important;
+  }
+  .spa-nav-tab {
+    padding: 6px 10px !important;
+  }
+  .desktop-controls-group {
+    gap: 4px !important;
+  }
+  .deploy-pill-btn span {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1250px) {
+  .desktop-controls-group {
+    display: none !important;
+  }
+  .mobile-tools-dropdown-wrapper {
+    display: block !important;
+  }
+  .timer-badge {
+    padding: 6px 10px !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+/* Принудительный компактный режим, управляемый ScreenBoundaryOptimizer */
+.top-nav.nav-compact .topic-title {
+  display: none !important;
+}
+.top-nav.nav-compact .spa-nav-tab span {
+  display: none !important;
+}
+.top-nav.nav-compact .spa-nav-tab {
+  padding: 6px 10px !important;
+}
+.top-nav.nav-compact .desktop-controls-group {
+  display: none !important;
+}
+.top-nav.nav-compact .mobile-tools-dropdown-wrapper {
+  display: block !important;
+}
+
+/* Адаптация Слайда 1 для средних экранов и ноутбуков */
+@media (max-width: 1150px) {
+  .hero-split-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    width: 100% !important;
+  }
+  .hero-visual-card {
+    width: 100% !important;
+    max-width: 460px !important;
+    margin: 0 auto !important;
+    min-height: auto !important;
+    padding: 16px !important;
+  }
+  .tech-globe-svg {
+    max-width: min(260px, 70vw) !important;
+  }
 }
 
 /* На мобильных устройствах и планшетах (<= 992px) */
