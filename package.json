@@ -4,11 +4,9 @@
   "description": "SPA: JWT Auth, Firebase Firestore, Netlify Functions, X-API-Key",
   "scripts": {
     "dev": "netlify dev",
-    "build": "echo No build step required"
+    "build": "echo 'Static build ready'"
   },
-  "dependencies": {
-    "firebase-admin": "^12.0.0"
-  },
+  "dependencies": {},
   "engines": {
     "node": ">=18"
   },
