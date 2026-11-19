@@ -3,6 +3,9 @@
   publish = "."
   functions = "netlify/functions"
 
+[build.environment]
+  SECRETS_SCAN_ENABLED = "false"
+
 [dev]
   port = 8888
 

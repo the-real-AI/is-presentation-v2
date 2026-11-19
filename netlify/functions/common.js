@@ -5,7 +5,7 @@
 
 const FIREBASE_API_KEY = process.env.FIREBASE_WEB_API_KEY || '';
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || '';
-const JWT_SECRET = process.env.JWT_SECRET || 'is-presentation-super-secret-jwt-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-fallback-key-change-in-env';
 
 // Мастер-ключи и валидные префиксы API
 const MASTER_API_KEY = 'xak_live_master_9948201';

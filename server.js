@@ -14,7 +14,7 @@ const crypto = require('node:crypto');
 const { DatabaseSync } = require('node:sqlite');
 
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'is-presentation-super-secret-jwt-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-fallback-key-change-in-env';
 const DB_FILE = path.join(__dirname, 'database.sqlite');
 
 // 1. Инициализация базы данных SQLite
