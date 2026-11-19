@@ -401,13 +401,27 @@ const Presentation = (() => {
         slideInner.style.overflowX = 'hidden';
       }
 
-      const innerBlocks = slideEl.querySelectorAll('.slide-inner > *');
-      innerBlocks.forEach(block => {
-        if (block.scrollWidth > maxAllowedWidth) {
-          block.style.maxWidth = '100%';
-          block.style.boxSizing = 'border-box';
-          block.style.overflowX = 'auto';
-          block.style.webkitOverflowScrolling = 'touch';
+      // Глубокий скан: найти ЛЮБОЙ элемент, чья ширина превышает viewport
+      // и принудительно ограничить его (рекурсивно по всему слайду)
+      const allEls = slideEl.querySelectorAll('*');
+      allEls.forEach(el => {
+        // Пропускаем элементы с намеренным горизонтальным скроллом (Kanban, CI/CD)
+        const cls = el.className || '';
+        const isScrollable = typeof cls === 'string' && (
+          cls.includes('kanban-mockup-board') ||
+          cls.includes('cicd-pipeline-container')
+        );
+        if (isScrollable) return;
+
+        // Принудительно ограничиваем ширину всем остальным
+        el.style.boxSizing = 'border-box';
+        el.style.maxWidth = '100%';
+
+        // Если элемент всё равно торчит за экран — добавляем авто-скролл
+        if (el.scrollWidth > vw + 2) {
+          el.style.overflowX = 'auto';
+          el.style.webkitOverflowScrolling = 'touch';
+          el.style.overflowWrap = 'break-word';
         }
       });
     }
