@@ -78,46 +78,103 @@ html, body {
 /* ==========================================================================
    ╨С╨Ю╨Ы╨м╨и╨Ш╨Х ╨б╨Х╨Э╨б╨Ю╨а╨Э╨л╨Х ╨Ъ╨Э╨Ю╨Я╨Ъ╨Ш ╨Ф╨Ы╨п ╨Ш╨Э╨в╨Х╨а╨Р╨Ъ╨в╨Ш╨Т╨Э╨Ю╨Щ ╨Ф╨Ю╨б╨Ъ╨Ш (SIDE TOUCH NAV)
    ========================================================================== */
+/* Smartboard side arrows: скрыты по умолчанию, появляются при наведении на край экрана */
 .smartboard-touch-nav {
   position: fixed;
   top: 50%;
-  transform: translateY(-50%);
-  width: 58px;
-  height: 130px;
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #fff;
-  font-size: 1.5rem;
+  transform: translateY(-50%) translateX(-100%);  /* спрятаны за край */
+  width: 42px;
+  height: 100px;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: rgba(255,255,255,0.5);
+  font-size: 1.1rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 95;
-  transition: var(--transition-smooth);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .smartboard-touch-nav.prev {
   left: 0;
-  border-radius: 0 20px 20px 0;
+  border-radius: 0 16px 16px 0;
   border-left: none;
+  transform: translateY(-50%) translateX(-100%); /* спрятана влево */
+}
+
+/* При наведении на левый край экрана — стрелка выезжает */
+.smartboard-touch-nav.prev:hover,
+.presentation-container:hover ~ .smartboard-touch-nav.prev,
+body:has(.smartboard-touch-nav.prev:hover) .smartboard-touch-nav.prev {
+  transform: translateY(-50%) translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+  color: #fff;
 }
 
 .smartboard-touch-nav.next {
   right: 0;
-  border-radius: 20px 0 0 20px;
+  border-radius: 16px 0 0 16px;
   border-right: none;
-  background: linear-gradient(135deg, rgba(79, 172, 254, 0.35), rgba(0, 242, 254, 0.35));
-  border-color: rgba(0, 242, 254, 0.4);
+  transform: translateY(-50%) translateX(100%); /* спрятана вправо */
+  background: rgba(15, 23, 42, 0.55);
+  border-color: rgba(0, 242, 254, 0.25);
 }
 
-.smartboard-touch-nav:active, .smartboard-touch-nav:hover {
-  background: linear-gradient(135deg, #4facfe, #00f2fe);
-  color: #07090e;
-  width: 68px;
-  box-shadow: 0 0 25px rgba(0, 242, 254, 0.6);
+/* При наведении на правый край — правая стрелка выезжает */
+.smartboard-touch-nav.next:hover {
+  transform: translateY(-50%) translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.5), rgba(0, 242, 254, 0.5));
+  color: #fff;
+}
+
+/* Зона срабатывания: невидимая полоска 20px по краям */
+.smartboard-touch-nav.prev::before {
+  content: '';
+  position: absolute;
+  left: 100%;
+  top: 0;
+  width: 20px;
+  height: 100%;
+}
+
+.smartboard-touch-nav.next::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 0;
+  width: 20px;
+  height: 100%;
+}
+
+/* При наведении на зону-триггер — кнопка выезжает */
+.smartboard-touch-nav.prev:hover,
+.smartboard-touch-nav.prev:focus-within {
+  transform: translateY(-50%) translateX(0) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.smartboard-touch-nav.next:hover,
+.smartboard-touch-nav.next:focus-within {
+  transform: translateY(-50%) translateX(0) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.smartboard-touch-nav:active {
+  background: linear-gradient(135deg, #4facfe, #00f2fe) !important;
+  color: #07090e !important;
+  box-shadow: 0 0 20px rgba(0, 242, 254, 0.5) !important;
 }
 
 /* ==========================================================================

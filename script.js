@@ -2084,4 +2084,51 @@ document.addEventListener('DOMContentLoaded', () => {
   AuthModule.init();
   DatabaseModule.loadSystems();
   UploadModule.init();
+
+  // Боковые стрелки smartboard: появляются при приближении мыши к краю экрана
+  (function initSideNavHover() {
+    const prevBtn = document.getElementById('sb-nav-prev');
+    const nextBtn = document.getElementById('sb-nav-next');
+    if (!prevBtn || !nextBtn) return;
+
+    // На тач-устройствах и мобильных — скрыть навсегда
+    if (window.innerWidth < 992 || navigator.maxTouchPoints > 0) return;
+
+    const EDGE_ZONE = 60; // пикселей от края для показа
+
+    function showBtn(btn) {
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+      btn.style.transform = 'translateY(-50%) translateX(0)';
+    }
+    function hideBtn(btn) {
+      btn.style.opacity = '0';
+      btn.style.pointerEvents = 'none';
+      if (btn.classList.contains('prev')) {
+        btn.style.transform = 'translateY(-50%) translateX(-100%)';
+      } else {
+        btn.style.transform = 'translateY(-50%) translateX(100%)';
+      }
+    }
+
+    document.addEventListener('mousemove', (e) => {
+      const vw = window.innerWidth;
+      if (e.clientX < EDGE_ZONE) {
+        showBtn(prevBtn);
+      } else {
+        hideBtn(prevBtn);
+      }
+      if (e.clientX > vw - EDGE_ZONE) {
+        showBtn(nextBtn);
+      } else {
+        hideBtn(nextBtn);
+      }
+    }, { passive: true });
+
+    // При уходе мыши с экрана — скрыть обе
+    document.addEventListener('mouseleave', () => {
+      hideBtn(prevBtn);
+      hideBtn(nextBtn);
+    });
+  })();
 });
