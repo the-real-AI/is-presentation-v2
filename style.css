@@ -279,9 +279,23 @@ body:has(.smartboard-touch-nav.prev:hover) .smartboard-touch-nav.prev {
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
+  flex: 0 0 auto !important;
+}
+
+.nav-center {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 1 1 auto !important;
   min-width: 0 !important;
-  flex: 0 1 auto !important;
-  overflow: hidden !important;
+}
+
+.nav-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex: 0 0 auto !important;
+  margin-left: auto !important;
 }
 
 .logo-pill {
@@ -318,15 +332,7 @@ body:has(.smartboard-touch-nav.prev:hover) .smartboard-touch-nav.prev {
 }
 
 .topic-title {
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: var(--text-main);
-  max-width: 220px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 0 1 auto;
-  min-width: 0;
+  display: none !important; /* Полностью скрыт — тема каждого слайда уже крупно отображается в H2 заголовке слайда */
 }
 
 .nav-center {
