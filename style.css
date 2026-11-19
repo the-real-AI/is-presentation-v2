@@ -267,20 +267,21 @@ body:has(.smartboard-touch-nav.prev:hover) .smartboard-touch-nav.prev {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 12px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 14px !important;
   z-index: 100;
-  overflow: hidden;
+  overflow: hidden !important;
 }
 
 .nav-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  flex-shrink: 1;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+  flex: 0 1 auto !important;
+  overflow: hidden !important;
 }
 
 .logo-pill {
@@ -317,13 +318,15 @@ body:has(.smartboard-touch-nav.prev:hover) .smartboard-touch-nav.prev {
 }
 
 .topic-title {
-  font-size: 1rem;
+  font-size: 0.92rem;
   font-weight: 600;
   color: var(--text-main);
-  max-width: 440px;
+  max-width: 220px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .nav-center {
@@ -365,10 +368,11 @@ body:has(.smartboard-touch-nav.prev:hover) .smartboard-touch-nav.prev {
 }
 
 .nav-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex: 0 0 auto !important;
+  margin-left: auto !important;
   max-width: 100%;
 }
 
@@ -4710,35 +4714,38 @@ body {
   background: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* ── Плавная адаптация шапки на средних и узких экранах (1150px - 1450px) ── */
-@media (max-width: 1450px) {
+/* ── Плавная адаптация шапки для всех разрешений экрана (Full HD 1080p, ноутбуки, планшеты) ── */
+@media (max-width: 1680px) {
   .topic-title {
-    display: none !important;
+    display: none !important; /* На каждом слайде уже есть крупный заголовок H2 — скрываем в шапке, чтобы не сдвигать кнопки */
   }
-  .spa-nav-tab span {
-    display: none !important;
-  }
-  .spa-nav-tab {
-    padding: 6px 10px !important;
+  .deploy-pill-btn span {
+    display: none !important; /* Кнопка "В облако" становится компактной иконкой */
   }
   .desktop-controls-group {
     gap: 4px !important;
   }
-  .deploy-pill-btn span {
-    display: none !important;
-  }
 }
 
-@media (max-width: 1250px) {
-  .desktop-controls-group {
-    display: none !important;
+@media (max-width: 1380px) {
+  .spa-nav-tab span {
+    display: none !important; /* Скрываем текст вкладок, оставляя аккуратные иконки с подсказками */
   }
-  .mobile-tools-dropdown-wrapper {
-    display: block !important;
+  .spa-nav-tab {
+    padding: 6px 10px !important;
   }
   .timer-badge {
     padding: 6px 10px !important;
-    font-size: 0.8rem !important;
+    font-size: 0.82rem !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .desktop-controls-group {
+    display: none !important; /* Сворачиваем кнопки в стильное выпадающее меню [ ⋮ ] */
+  }
+  .mobile-tools-dropdown-wrapper {
+    display: block !important;
   }
 }
 

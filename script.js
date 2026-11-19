@@ -322,9 +322,9 @@ const Presentation = (() => {
       if (!topNav) return;
       const vw = getViewportWidth();
 
-      const isNarrow = vw < 1400;
+      const isNarrow = vw < 1680;
       const isMobile = vw <= 992;
-      const exceeds = topNav.scrollWidth > vw;
+      const exceeds = topNav.scrollWidth > (topNav.clientWidth + 2);
 
       topNav.classList.toggle('nav-compact', isNarrow || exceeds);
       topNav.classList.toggle('nav-mobile', isMobile);
@@ -472,6 +472,9 @@ const Presentation = (() => {
     const activeSlide = document.querySelector(`.slide[data-slide="${currentSlide}"]`);
     if (activeSlide && topicTitle) {
       topicTitle.textContent = activeSlide.getAttribute('data-topic') || '';
+      if (typeof ScreenBoundaryOptimizer !== 'undefined') {
+        ScreenBoundaryOptimizer.optimizeHeader();
+      }
     }
 
     if (progressBarFill) {
