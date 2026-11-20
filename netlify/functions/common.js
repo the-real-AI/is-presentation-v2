@@ -7,8 +7,109 @@ const FIREBASE_API_KEY = process.env.FIREBASE_WEB_API_KEY || '';
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || '';
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-fallback-key-change-in-env';
 
-// Мастер-ключи и валидные префиксы API
+// Мастер-ключи и ролевая модель X-API-Key по HTTP методам
 const MASTER_API_KEY = 'xak_live_master_9948201';
+
+const METHOD_KEY_MAP = {
+  // 1. GET (Чтение)
+  'xak_get_read_8841': {
+    name: 'GET Read Key',
+    methods: ['GET'],
+    description: 'Разрешён только просмотр данных (GET)'
+  },
+  // 2. POST (Создание)
+  'xak_post_create_4492': {
+    name: 'POST Create Key',
+    methods: ['POST'],
+    description: 'Разрешено только добавление новых записей (POST)'
+  },
+  // 3. PATCH (Обновление)
+  'xak_patch_update_6631': {
+    name: 'PATCH Update Key',
+    methods: ['PATCH', 'PUT'],
+    description: 'Разрешено только частичное изменение записей (PATCH)'
+  },
+  // 4. DELETE (Удаление)
+  'xak_delete_remove_1109': {
+    name: 'DELETE Remove Key',
+    methods: ['DELETE'],
+    description: 'Разрешено только удаление записей (DELETE)'
+  },
+  // 5. MASTER (Все методы)
+  'xak_live_master_9948201': {
+    name: 'Master Production Key (Full Access)',
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
+    description: 'Полный доступ ко всем HTTP-методам'
+  }
+};
+
+function getKeyPermissions(apiKey) {
+  if (!apiKey) return null;
+  if (METHOD_KEY_MAP[apiKey]) {
+    return METHOD_KEY_MAP[apiKey];
+  }
+  // Поддержка префиксов
+  if (apiKey.startsWith('xak_get_')) {
+    return { name: 'GET Key (Prefix)', methods: ['GET'] };
+  }
+  if (apiKey.startsWith('xak_post_')) {
+    return { name: 'POST Key (Prefix)', methods: ['POST'] };
+  }
+  if (apiKey.startsWith('xak_patch_')) {
+    return { name: 'PATCH Key (Prefix)', methods: ['PATCH', 'PUT'] };
+  }
+  if (apiKey.startsWith('xak_delete_') || apiKey.startsWith('xak_del_')) {
+    return { name: 'DELETE Key (Prefix)', methods: ['DELETE'] };
+  }
+  if (apiKey === MASTER_API_KEY || apiKey.startsWith('xak_master_') || apiKey.startsWith('xak_admin_')) {
+    return { name: 'Master Key (Prefix)', methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'] };
+  }
+  return null;
+}
+
+// Проверка валидности X-API-Key с привязкой к HTTP-методу
+function validateApiKey(event) {
+  const headers = event.headers || {};
+  const apiKey = headers['x-api-key'] || headers['X-API-Key'] || headers['X-Api-Key'];
+  const method = (event.httpMethod || 'GET').toUpperCase();
+  
+  if (!apiKey) {
+    return {
+      valid: false,
+      statusCode: 401,
+      error: 'Unauthorized: Missing X-API-Key header',
+      message: 'Доступ к API закрыт! Требуется заголовок X-API-Key.',
+      hint: 'Используйте ключ, соответствующий методу: GET (xak_get_read_8841), POST (xak_post_create_4492), PATCH (xak_patch_update_6631), DELETE (xak_delete_remove_1109)'
+    };
+  }
+
+  const keyConfig = getKeyPermissions(apiKey);
+
+  if (!keyConfig) {
+    return {
+      valid: false,
+      statusCode: 401,
+      error: 'Unauthorized: Invalid X-API-Key',
+      message: 'Указанный X-API-Key недействителен или не зарегистрирован в системе.',
+      hint: 'Допустимые ключи: GET -> xak_get_read_8841, POST -> xak_post_create_4492, PATCH -> xak_patch_update_6631, DELETE -> xak_delete_remove_1109, ALL -> xak_live_master_9948201'
+    };
+  }
+
+  // Проверка права на текущий HTTP-метод
+  if (!keyConfig.methods.includes(method)) {
+    return {
+      valid: false,
+      statusCode: 403,
+      error: 'Forbidden: Method Not Allowed For This Key',
+      message: `Отказ в доступе! Ключ '${apiKey}' имеет права только на: [${keyConfig.methods.join(', ')}], но вы отправили метод ${method}.`,
+      hint: `Для метода ${method} используйте предназначенный для него ключ X-API-Key.`,
+      allowed_methods: keyConfig.methods,
+      attempted_method: method
+    };
+  }
+
+  return { valid: true, apiKey, permissions: keyConfig.methods };
+}
 
 // Эталонные данные реестра ИС
 const INITIAL_SYSTEMS = [
@@ -74,36 +175,6 @@ const INITIAL_SYSTEMS = [
   }
 ];
 
-// Проверка валидности X-API-Key
-function validateApiKey(event) {
-  const headers = event.headers || {};
-  // Headers in Netlify functions may be lowercase or original
-  const apiKey = headers['x-api-key'] || headers['X-API-Key'] || headers['X-Api-Key'];
-  
-  if (!apiKey) {
-    return {
-      valid: false,
-      statusCode: 401,
-      error: 'Unauthorized: Missing X-API-Key header',
-      message: 'Доступ к API закрыт! Требуется заголовок X-API-Key. Получите ключ в разделе JWT Авторизация.',
-      hint: 'Пример: curl -H "X-API-Key: xak_live_master_9948201" ...'
-    };
-  }
-
-  // Любой ключ с префиксом xak_ или мастер-ключ считается валидным
-  if (apiKey === MASTER_API_KEY || apiKey.startsWith('xak_')) {
-    return { valid: true, apiKey };
-  }
-
-  return {
-    valid: false,
-    statusCode: 401,
-    error: 'Unauthorized: Invalid X-API-Key',
-    message: 'Указанный X-API-Key недействителен или заблокирован.',
-    hint: 'Используйте персональный ключ с префиксом xak_ или мастер-ключ xak_live_master_9948201'
-  };
-}
-
 // Преобразование Firestore Document в плоский JS объект
 function fromFirestoreDoc(doc) {
   if (!doc || !doc.fields) return null;
@@ -165,6 +236,7 @@ module.exports = {
   FIREBASE_PROJECT_ID,
   JWT_SECRET,
   MASTER_API_KEY,
+  METHOD_KEY_MAP,
   INITIAL_SYSTEMS,
   validateApiKey,
   fromFirestoreDoc,
