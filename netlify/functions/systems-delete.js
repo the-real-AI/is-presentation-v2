@@ -1,6 +1,6 @@
 /**
  * Netlify Function: /api/v1/systems/:id
- * Методы: DELETE, PATCH, OPTIONS
+ * Методы: GET, DELETE, PATCH, OPTIONS
  * Защита: Обязательный заголовок X-API-Key
  */
 
@@ -9,6 +9,7 @@ const {
   FIREBASE_PROJECT_ID,
   validateApiKey,
   toFirestoreFields,
+  fromFirestoreDoc,
   jsonResponse,
   CORS_HEADERS
 } = require('./common');
@@ -30,6 +31,53 @@ exports.handler = async (event) => {
       error: auth.error,
       message: auth.message
     });
+  }
+
+  // GET: получение конкретной системы по id
+  if (event.httpMethod === 'GET') {
+    const pathParts = (event.path || '').split('/');
+    const docId = pathParts[pathParts.length - 1];
+
+    if (!docId) {
+      return jsonResponse(400, {
+        success: false,
+        error: 'Bad Request',
+        message: 'Не указан идентификатор системы'
+      });
+    }
+
+    try {
+      const getUrl = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/systems/${encodeURIComponent(docId)}?key=${FIREBASE_API_KEY}`;
+      const res = await fetch(getUrl);
+
+      if (!res.ok) {
+        if (res.status === 404) {
+          return jsonResponse(404, {
+            success: false,
+            error: 'Not Found',
+            message: `Система с идентификатором '${docId}' не найдена в базе данных`
+          });
+        }
+        const err = await res.json();
+        return jsonResponse(res.status, {
+          success: false,
+          error: err.error?.message || 'Firestore error'
+        });
+      }
+
+      const docData = await res.json();
+      return jsonResponse(200, {
+        success: true,
+        source: 'Google Cloud Firestore',
+        data: fromFirestoreDoc(docData)
+      });
+    } catch (err) {
+      return jsonResponse(500, {
+        success: false,
+        error: 'Internal Server Error',
+        message: err.message
+      });
+    }
   }
 
   if (event.httpMethod === 'DELETE') {
