@@ -29,7 +29,8 @@ exports.handler = async (event) => {
     return jsonResponse(auth.statusCode, {
       success: false,
       error: auth.error,
-      message: auth.message
+      message: auth.message,
+      hint: auth.hint
     });
   }
 
